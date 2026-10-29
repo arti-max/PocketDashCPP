@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   # ====================================================================
@@ -112,7 +112,6 @@ jobs:
             exit 1
           fi
           echo "Packaging macOS app from: $APP_DIR"
-          # ditto preserves permissions and Apple bundle structure
           ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "PocketDash-macOS.zip"
 
       - name: Upload macOS Artifact
@@ -224,21 +223,22 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Cache Axmol Engine
         id: cache-axmol
         uses: actions/cache@v4
         with:
           path: /home/runner/axmol
-          key: axmol-release-2.x-linux
+          key: axmol-release-2.x-android
 
-      - name: Setup Axmol & Dependencies
+      - name: Clone Axmol Engine
         if: steps.cache-axmol.outputs.cache-hit != 'true'
         shell: bash
         run: |
           git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ${HOME}/axmol
+
+      - name: Setup Axmol & Dependencies
+        shell: bash
+        run: |
           echo -e "y" | pwsh ${HOME}/axmol/setup.ps1
 
       - name: Build Android APK
@@ -287,11 +287,15 @@ jobs:
           path: /home/runner/axmol
           key: axmol-release-2.x-linux
 
-      - name: Setup Axmol & Dependencies
+      - name: Clone Axmol Engine
         if: steps.cache-axmol.outputs.cache-hit != 'true'
         shell: bash
         run: |
           git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ${HOME}/axmol
+
+      - name: Install Linux System Dependencies
+        shell: bash
+        run: |
           echo -e "y" | pwsh ${HOME}/axmol/setup.ps1
 
       - name: Build PocketDash (Linux)
