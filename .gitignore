@@ -43,6 +43,7 @@ CMakeSettings.json
 # --------------------------------------------------------------------
 proj.android/.gradle/
 proj.android/.cxx/
+proj.android/**/.cxx/
 proj.android/build/
 proj.android/app/build/
 proj.android/local.properties
@@ -51,6 +52,7 @@ proj.android/**/*.apk
 proj.android/**/*.aab
 proj.android/**/*.dex
 proj.android/buildsrc/
+proj.android/app/src/dev/axmol/lib/
 .idea/
 *.iml
 
