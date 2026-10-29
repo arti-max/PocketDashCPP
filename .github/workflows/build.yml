@@ -1,4 +1,4 @@
-name: Multiplatform Build (Windows, macOS, iOS, Linux)
+name: Multiplatform Build (Windows, macOS, iOS, Android, Linux)
 
 on:
   push:
@@ -44,18 +44,19 @@ jobs:
         run: |
           $env:AX_ROOT = "C:/axmol"
           $env:PATH = "C:/axmol/tools/cmdline;$env:PATH"
-          axmol build -p win32 -a x64 -O3
+          axmol build -p win32 -a x64 -t PocketDash -O3
 
       - name: Package Windows Binary & Assets
         shell: pwsh
         run: |
-          $targetDir = Get-ChildItem -Path . -Recurse -Directory | Where-Object { Test-Path "$($_.FullName)/PocketDash.exe" } | Select-Object -First 1
-          if (-not $targetDir) {
-            Write-Error "Could not locate directory containing PocketDash.exe"
+          $exe = Get-ChildItem -Path . -Recurse -File -Filter "PocketDash.exe" | Select-Object -First 1
+          if (-not $exe) {
+            Write-Error "Could not locate PocketDash.exe"
             exit 1
           }
-          Write-Host "Found PocketDash binary directory at: $($targetDir.FullName)"
-          Compress-Archive -Path "$($targetDir.FullName)/*" -DestinationPath "PocketDash-Windows-x64.zip"
+          $binDir = $exe.DirectoryName
+          Write-Host "Found PocketDash binary directory at: $binDir"
+          Compress-Archive -Path "$binDir/*" -DestinationPath "PocketDash-Windows-x64.zip"
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
@@ -96,14 +97,14 @@ jobs:
         run: |
           export AX_ROOT="${HOME}/axmol"
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
-          axmol build -p osx -a arm64 -O3 -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
+          axmol build -p osx -a arm64 -t PocketDash -O3 -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
 
       - name: Package macOS Application (.app)
         shell: bash
         run: |
-          APP_DIR=$(find . -path "*osx*" -o -path "*build*" | grep -E "PocketDash\.app$" | grep -v "ios" | head -n 1)
+          APP_DIR=$(find . -path "*osx*" -o -path "*build*" | grep -E "PocketDash\.app$" | grep -v "ios" | grep -v "sim" | head -n 1)
           if [ -z "$APP_DIR" ]; then
-            APP_DIR=$(find . -name "PocketDash.app" -type d | grep -v "ios" | head -n 1)
+            APP_DIR=$(find . -name "PocketDash.app" -type d | grep -v "ios" | grep -v "sim" | head -n 1)
           fi
           if [ -z "$APP_DIR" ]; then
             echo "Error: PocketDash.app not found!"
@@ -154,7 +155,7 @@ jobs:
         run: |
           export AX_ROOT="${HOME}/axmol"
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
-          axmol build -p ios -a arm64 -O3 -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
+          axmol build -p ios -a arm64 -t PocketDash -O3 -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
 
       - name: Package iOS Device IPA
         shell: bash
@@ -176,7 +177,7 @@ jobs:
         run: |
           export AX_ROOT="${HOME}/axmol"
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
-          axmol build -p ios -a arm64 -sdk simulator -O3
+          axmol build -p ios -a arm64 -sdk simulator -t PocketDash -O3
 
       - name: Package iOS Simulator App
         shell: bash
@@ -203,6 +204,68 @@ jobs:
         with:
           name: PocketDash-iOS-Simulator
           path: PocketDash-iOS-Simulator.zip
+          retention-days: 14
+
+  # ====================================================================
+  # Android Build (arm64 APK)
+  # ====================================================================
+  android:
+    name: Android (arm64 APK)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Axmol Engine
+        id: cache-axmol
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/axmol
+          key: axmol-release-2.x-linux
+
+      - name: Setup Axmol & Dependencies
+        if: steps.cache-axmol.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ${HOME}/axmol
+          echo -e "y" | pwsh ${HOME}/axmol/setup.ps1
+
+      - name: Build Android APK
+        shell: bash
+        run: |
+          export AX_ROOT="${HOME}/axmol"
+          export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
+          chmod +x proj.android/gradlew
+          axmol build -p android -a arm64
+
+      - name: Package Android APK
+        shell: bash
+        run: |
+          APK_FILE=$(find proj.android -name "*.apk" -type f | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            echo "Error: APK not found!"
+            find proj.android -name "*.apk" || true
+            exit 1
+          fi
+          echo "Found APK at: $APK_FILE"
+          cp "$APK_FILE" "PocketDash-Android-arm64.apk"
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PocketDash-Android-arm64
+          path: PocketDash-Android-arm64.apk
           retention-days: 14
 
   # ====================================================================
