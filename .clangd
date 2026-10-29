@@ -1,0 +1,21 @@
+CompileFlags:
+  CompilationDatabase: "build"
+  Add:
+    - -Wno-unknown-warning-option
+    - -Wno-unused-command-line-argument
+
+Diagnostics:
+  UnusedIncludes: Strict
+  ClangTidy:
+    Add:
+      - performance-*
+      - bugprone-*
+      - readability-*
+    Remove:
+      - readability-identifier-length
+
+InlayHints:
+  Designators: Yes
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes

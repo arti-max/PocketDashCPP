@@ -1,0 +1,252 @@
+name: Multiplatform Build (Windows, macOS, iOS, Linux)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ====================================================================
+  # Windows x64 Build
+  # ====================================================================
+  windows:
+    name: Windows (x64)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache Axmol Engine
+        id: cache-axmol
+        uses: actions/cache@v4
+        with:
+          path: C:/axmol
+          key: axmol-release-2.x-windows
+
+      - name: Setup Axmol Engine
+        if: steps.cache-axmol.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git C:/axmol
+          cd C:/axmol
+          ./setup.ps1
+
+      - name: Build PocketDash (Windows)
+        shell: pwsh
+        run: |
+          $env:AX_ROOT = "C:/axmol"
+          $env:PATH = "C:/axmol/tools/cmdline;$env:PATH"
+          axmol build -p win32 -a x64 -O3
+
+      - name: Package Windows Binary & Assets
+        shell: pwsh
+        run: |
+          $targetDir = Get-ChildItem -Path . -Recurse -Directory | Where-Object { Test-Path "$($_.FullName)/PocketDash.exe" } | Select-Object -First 1
+          if (-not $targetDir) {
+            Write-Error "Could not locate directory containing PocketDash.exe"
+            exit 1
+          }
+          Write-Host "Found PocketDash binary directory at: $($targetDir.FullName)"
+          Compress-Archive -Path "$($targetDir.FullName)/*" -DestinationPath "PocketDash-Windows-x64.zip"
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PocketDash-Windows-x64
+          path: PocketDash-Windows-x64.zip
+          retention-days: 14
+
+  # ====================================================================
+  # macOS (Apple Silicon / arm64) Build
+  # ====================================================================
+  macos:
+    name: macOS (arm64)
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache Axmol Engine
+        id: cache-axmol
+        uses: actions/cache@v4
+        with:
+          path: /Users/runner/axmol
+          key: axmol-release-2.x-macos
+
+      - name: Setup Axmol Engine
+        if: steps.cache-axmol.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ${HOME}/axmol
+          cd ${HOME}/axmol
+          pwsh ./setup.ps1
+
+      - name: Build PocketDash (macOS)
+        shell: bash
+        run: |
+          export AX_ROOT="${HOME}/axmol"
+          export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
+          axmol build -p osx -a arm64 -O3 -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
+
+      - name: Package macOS Application (.app)
+        shell: bash
+        run: |
+          APP_DIR=$(find . -path "*osx*" -o -path "*build*" | grep -E "PocketDash\.app$" | grep -v "ios" | head -n 1)
+          if [ -z "$APP_DIR" ]; then
+            APP_DIR=$(find . -name "PocketDash.app" -type d | grep -v "ios" | head -n 1)
+          fi
+          if [ -z "$APP_DIR" ]; then
+            echo "Error: PocketDash.app not found!"
+            find . -name "*.app" || true
+            exit 1
+          fi
+          echo "Packaging macOS app from: $APP_DIR"
+          # ditto preserves permissions and Apple bundle structure
+          ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "PocketDash-macOS.zip"
+
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PocketDash-macOS
+          path: PocketDash-macOS.zip
+          retention-days: 14
+
+  # ====================================================================
+  # iOS Build (Device IPA + Simulator App)
+  # ====================================================================
+  ios:
+    name: iOS (Device & Simulator)
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache Axmol Engine
+        id: cache-axmol
+        uses: actions/cache@v4
+        with:
+          path: /Users/runner/axmol
+          key: axmol-release-2.x-macos
+
+      - name: Setup Axmol Engine
+        if: steps.cache-axmol.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ${HOME}/axmol
+          cd ${HOME}/axmol
+          pwsh ./setup.ps1
+
+      # 1. iOS Physical Device Build (arm64)
+      - name: Build iOS Device (arm64)
+        shell: bash
+        run: |
+          export AX_ROOT="${HOME}/axmol"
+          export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
+          axmol build -p ios -a arm64 -O3 -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
+
+      - name: Package iOS Device IPA
+        shell: bash
+        run: |
+          APP_DIR=$(find . -path "*ios*" -name "PocketDash.app" -type d | grep -v "sim" | head -n 1)
+          if [ -n "$APP_DIR" ]; then
+            echo "Packaging iOS Device IPA from: $APP_DIR"
+            mkdir -p Payload
+            cp -R "$APP_DIR" Payload/
+            zip -qr "PocketDash-iOS.ipa" Payload
+            rm -rf Payload
+          else
+            echo "Warning: iOS device app bundle not found!"
+          fi
+
+      # 2. iOS Simulator Build (for testing in Mac Simulator)
+      - name: Build iOS Simulator (arm64)
+        shell: bash
+        run: |
+          export AX_ROOT="${HOME}/axmol"
+          export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
+          axmol build -p ios -a arm64 -sdk simulator -O3
+
+      - name: Package iOS Simulator App
+        shell: bash
+        run: |
+          SIM_DIR=$(find . -path "*sim*" -name "PocketDash.app" -type d | head -n 1)
+          if [ -n "$SIM_DIR" ]; then
+            echo "Packaging iOS Simulator app from: $SIM_DIR"
+            ditto -c -k --sequesterRsrc --keepParent "$SIM_DIR" "PocketDash-iOS-Simulator.zip"
+          else
+            echo "Warning: iOS Simulator app bundle not found!"
+          fi
+
+      - name: Upload iOS Device IPA
+        if: hashFiles('PocketDash-iOS.ipa') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: PocketDash-iOS-Device-IPA
+          path: PocketDash-iOS.ipa
+          retention-days: 14
+
+      - name: Upload iOS Simulator App
+        if: hashFiles('PocketDash-iOS-Simulator.zip') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: PocketDash-iOS-Simulator
+          path: PocketDash-iOS-Simulator.zip
+          retention-days: 14
+
+  # ====================================================================
+  # Linux x64 Build
+  # ====================================================================
+  linux:
+    name: Linux (x64)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache Axmol Engine
+        id: cache-axmol
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/axmol
+          key: axmol-release-2.x-linux
+
+      - name: Setup Axmol & Dependencies
+        if: steps.cache-axmol.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ${HOME}/axmol
+          echo -e "y" | pwsh ${HOME}/axmol/setup.ps1
+
+      - name: Build PocketDash (Linux)
+        shell: bash
+        run: |
+          export AX_ROOT="${HOME}/axmol"
+          export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
+          cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --target PocketDash -j$(nproc)
+
+      - name: Package Linux Binary & Assets
+        shell: bash
+        run: |
+          tar -czf PocketDash-Linux-x64.tar.gz -C build/bin/PocketDash .
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PocketDash-Linux-x64
+          path: PocketDash-Linux-x64.tar.gz
+          retention-days: 14

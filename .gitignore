@@ -1,0 +1,109 @@
+# ====================================================================
+# PocketDash - Git Ignore Configuration
+# ====================================================================
+
+# --------------------------------------------------------------------
+# Build Outputs & Compilation Databases
+# --------------------------------------------------------------------
+/build/
+/build_*/
+*-build/
+cmake-build-*/
+/out/
+/bin/
+/lib/
+/obj/
+compile_commands.json
+
+# CMake temporary & cache files
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+CMakeLists.txt.user
+CMakeSettings.json
+
+# --------------------------------------------------------------------
+# VS Code / VScodium
+# Track shared project configurations, ignore local/user caches
+# --------------------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.vscode/*.log
+
+# Clangd local index cache
+.clangd/
+
+# --------------------------------------------------------------------
+# Android (proj.android)
+# --------------------------------------------------------------------
+proj.android/.gradle/
+proj.android/.cxx/
+proj.android/build/
+proj.android/app/build/
+proj.android/local.properties
+proj.android/captures/
+proj.android/**/*.apk
+proj.android/**/*.aab
+proj.android/**/*.dex
+proj.android/buildsrc/
+.idea/
+*.iml
+
+# --------------------------------------------------------------------
+# Apple (macOS / iOS / Xcode)
+# --------------------------------------------------------------------
+.DS_Store
+._*
+*.mode*v*
+*.pbxuser
+*.xcbkptlist
+*.xcworkspacedata
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+xcuserdata/
+DerivedData/
+*.[iI][pP][aA]
+*.[aA][pP][pP]
+
+# --------------------------------------------------------------------
+# Windows / Visual Studio
+# --------------------------------------------------------------------
+Thumbs.db
+desktop.ini
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.aps
+*.ncb
+*.suo
+*.user
+*.vcproj.*.user
+*.vcxproj.user
+*.vspscc
+ipch/
+.vs/
+*.VC.db
+*.opendb
+*.opensdf
+
+# --------------------------------------------------------------------
+# General Temp / Logs / Backups / Editors
+# --------------------------------------------------------------------
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+tmp/
+temp/
+cache/
+_cache/
+.gitee/
+.xs/

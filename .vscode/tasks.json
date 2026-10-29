@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build PocketDash",
+      "type": "shell",
+      "command": "cmake --build build --target PocketDash -j$(nproc)",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "Clean",
+      "type": "shell",
+      "command": "cmake --build build --target clean",
+      "problemMatcher": []
+    },
+    {
+      "label": "Reconfigure (CMake)",
+      "type": "shell",
+      "command": "cmake -B build -S . -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run PocketDash",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/bin/PocketDash/PocketDash",
+      "dependsOn": "Build PocketDash",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Android (arm64)",
+      "type": "shell",
+      "command": "${workspaceFolder}/build_android.sh",
+      "problemMatcher": []
+    }
+  ]
+}
