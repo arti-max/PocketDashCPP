@@ -80,6 +80,8 @@ fi
 
 if [[ "${BUILD_TYPE}" == "Release" ]]; then
     BUILD_ARGS+=("-xb" "--config" "Release")
+else
+    BUILD_ARGS+=("-xb" "--config" "Debug")
 fi
 
 chmod +x proj.android/gradlew
