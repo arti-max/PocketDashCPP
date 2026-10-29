@@ -19,10 +19,24 @@ jobs:
     name: Windows (x64)
     runs-on: windows-latest
     steps:
+      - name: Disable Windows Defender
+        shell: pwsh
+        run: |
+          Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue
+          Set-MpPreference -DisableBehaviorMonitoring $true -ErrorAction SilentlyContinue
+          Set-MpPreference -DisableScriptScanning $true -ErrorAction SilentlyContinue
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Setup sccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: windows-sccache-v1
+          max-size: 2G
 
       - name: Cache Axmol Engine
         id: cache-axmol
@@ -44,6 +58,8 @@ jobs:
         run: |
           $env:AX_ROOT = "C:/axmol"
           $env:PATH = "C:/axmol/tools/cmdline;$env:PATH"
+          $env:CMAKE_C_COMPILER_LAUNCHER = "sccache"
+          $env:CMAKE_CXX_COMPILER_LAUNCHER = "sccache"
           axmol build -p win32 -a x64 -t PocketDash -O3
 
       - name: Package Windows Binary & Assets
@@ -77,6 +93,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: ccache
+          key: macos-ccache-v1
+          max-size: 2G
+
       - name: Cache Axmol Engine
         id: cache-axmol
         uses: actions/cache@v4
@@ -97,6 +120,8 @@ jobs:
         run: |
           export AX_ROOT="${HOME}/axmol"
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
+          export CMAKE_C_COMPILER_LAUNCHER=ccache
+          export CMAKE_CXX_COMPILER_LAUNCHER=ccache
           axmol build -p osx -a arm64 -t PocketDash -O3 -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
 
       - name: Package macOS Application (.app)
@@ -133,6 +158,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: ccache
+          key: ios-ccache-v1
+          max-size: 2G
+
       - name: Cache Axmol Engine
         id: cache-axmol
         uses: actions/cache@v4
@@ -154,6 +186,8 @@ jobs:
         run: |
           export AX_ROOT="${HOME}/axmol"
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
+          export CMAKE_C_COMPILER_LAUNCHER=ccache
+          export CMAKE_CXX_COMPILER_LAUNCHER=ccache
           axmol build -p ios -a arm64 -t PocketDash -O3 -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
 
       - name: Package iOS Device IPA
@@ -176,6 +210,8 @@ jobs:
         run: |
           export AX_ROOT="${HOME}/axmol"
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
+          export CMAKE_C_COMPILER_LAUNCHER=ccache
+          export CMAKE_CXX_COMPILER_LAUNCHER=ccache
           axmol build -p ios -a arm64 -sdk simulator -t PocketDash -O3
 
       - name: Package iOS Simulator App
@@ -230,22 +266,40 @@ jobs:
           path: /home/runner/axmol
           key: axmol-release-2.x-android
 
+      - name: Cache Android NDK
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/lib/android/sdk/ndk/23.3.12186248
+          key: android-ndk-r23d-12186248
+
       - name: Clone Axmol Engine
         if: steps.cache-axmol.outputs.cache-hit != 'true'
         shell: bash
         run: |
           git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ${HOME}/axmol
 
-      - name: Setup Axmol & Dependencies
+      - name: Setup Axmol & Android SDK/NDK
         shell: bash
         run: |
-          echo -e "y" | pwsh ${HOME}/axmol/setup.ps1
+          sudo chown -R $USER:$USER /usr/local/lib/android/sdk || true
+          echo -e "y" | pwsh ${HOME}/axmol/setup.ps1 -p android
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: ccache
+          key: android-ccache-v1
+          max-size: 2G
 
       - name: Build Android APK
         shell: bash
         run: |
           export AX_ROOT="${HOME}/axmol"
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
+          export NDK_CCACHE="$(which ccache)"
+          export CMAKE_C_COMPILER_LAUNCHER=ccache
+          export CMAKE_CXX_COMPILER_LAUNCHER=ccache
           chmod +x proj.android/gradlew
           axmol build -p android -a arm64
 
@@ -280,6 +334,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: ccache
+          key: linux-ccache-v1
+          max-size: 2G
+
       - name: Cache Axmol Engine
         id: cache-axmol
         uses: actions/cache@v4
@@ -303,6 +364,8 @@ jobs:
         run: |
           export AX_ROOT="${HOME}/axmol"
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
+          export CMAKE_C_COMPILER_LAUNCHER=ccache
+          export CMAKE_CXX_COMPILER_LAUNCHER=ccache
           cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build --target PocketDash -j$(nproc)
 

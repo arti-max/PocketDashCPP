@@ -13,6 +13,7 @@ cmake-build-*/
 /bin/
 /lib/
 /obj/
+/artifacts/
 compile_commands.json
 
 # CMake temporary & cache files

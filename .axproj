@@ -1,5 +1,4 @@
 engine_version=2.11.6
 project_type=cpp
 package_name=com.poly9a.pocketdash
-ndk=r23+
 
