@@ -272,11 +272,11 @@ jobs:
         run: |
           git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ${HOME}/axmol
 
-      - name: Setup Axmol & Android SDK/NDK
+      - name: Setup Axmol & Dependencies
         shell: bash
         run: |
           sudo chown -R $USER:$USER /usr/local/lib/android/sdk || true
-          echo -e "y" | pwsh ${HOME}/axmol/setup.ps1 -p android
+          echo -e "y" | pwsh ${HOME}/axmol/setup.ps1
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
