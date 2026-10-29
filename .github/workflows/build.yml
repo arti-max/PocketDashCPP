@@ -266,13 +266,6 @@ jobs:
           path: /home/runner/axmol
           key: axmol-release-2.x-android
 
-      - name: Cache Android NDK
-        id: cache-ndk
-        uses: actions/cache@v4
-        with:
-          path: /usr/local/lib/android/sdk/ndk/23.3.12186248
-          key: android-ndk-r23d-12186248
-
       - name: Clone Axmol Engine
         if: steps.cache-axmol.outputs.cache-hit != 'true'
         shell: bash
