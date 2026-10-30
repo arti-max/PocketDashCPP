@@ -86,7 +86,7 @@ jobs:
   # ====================================================================
   macos:
     name: macOS (arm64)
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -104,15 +104,15 @@ jobs:
         id: cache-axmol
         uses: actions/cache@v4
         with:
-          path: /Users/runner/axmol
-          key: axmol-release-2.x-macos
+          path: ~/axmol
+          key: axmol-release-2.x-macos-15
 
       - name: Setup Axmol Engine
         if: steps.cache-axmol.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ${HOME}/axmol
-          cd ${HOME}/axmol
+          git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ~/axmol
+          cd ~/axmol
           pwsh ./setup.ps1
 
       - name: Build PocketDash (macOS)
@@ -151,7 +151,7 @@ jobs:
   # ====================================================================
   ios:
     name: iOS (Device & Simulator)
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -169,15 +169,15 @@ jobs:
         id: cache-axmol
         uses: actions/cache@v4
         with:
-          path: /Users/runner/axmol
-          key: axmol-release-2.x-macos
+          path: ~/axmol
+          key: axmol-release-2.x-macos-15
 
       - name: Setup Axmol Engine
         if: steps.cache-axmol.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ${HOME}/axmol
-          cd ${HOME}/axmol
+          git clone --depth 1 -b release/2.x https://github.com/axmolengine/axmol.git ~/axmol
+          cd ~/axmol
           pwsh ./setup.ps1
 
       # 1. iOS Physical Device Build (arm64)
