@@ -1,6 +1,9 @@
 #include "GameObject.h"
 
-GameObject* GameObject::create(int spriteId) {}
+GameObject* GameObject::create(int spriteId)
+{
+    return nullptr;
+}
 GameObject* GameObject::createFromType(GameObjectType type)
 {
     auto* obj = new (std::nothrow) GameObject();
@@ -12,7 +15,10 @@ GameObject* GameObject::createFromType(GameObjectType type)
     delete obj;
     return nullptr;
 }
-GameObject* GameObject::createFromObj(std::string_view objString) {}
+GameObject* GameObject::createFromObj(std::string_view objString)
+{
+    return nullptr;
+}
 
 bool GameObject::initWithType(GameObjectType type)
 {

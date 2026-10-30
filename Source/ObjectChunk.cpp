@@ -40,8 +40,8 @@ int ObjectChunk::getIndexByPos(int x, int y) const
 bool ObjectChunk::addObjectToChunk(GameObject* obj)
 {
     auto pos   = obj->getPosition();
-    int localX = (static_cast<int>(pos.x / CELL_SIZE) - (this->x * this->width));
-    int localY = (static_cast<int>(pos.y / CELL_SIZE) - (this->y * this->height));
+    int localX = (static_cast<int>(pos.x) - (this->x * this->width));
+    int localY = (static_cast<int>(pos.y) - (this->y * this->height));
 
     if (localX < 0 || localY < 0 || localX >= this->width || localY >= this->height)
     {

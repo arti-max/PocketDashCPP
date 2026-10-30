@@ -25,30 +25,30 @@ bool EditorScene::init()
 
     this->initBlockPanel(visibleSize, origin);
 
-    for (int i = 0; i < 1; i++)
-    {
-        auto c = ObjectChunk::create();
-        // for (int x = 0; x < ObjectChunk::CHUNK_SIZE; x++)
-        // {
-        //     for (int y = 0; y < ObjectChunk::CHUNK_SIZE; y++)
-        //     {
-        //         auto b2 = GameObject::createFromType((i == 0)   ? GameObjectType::Block
-        //                                              : (i == 1) ? GameObjectType::Spike
-        //                                              : (i == 2) ? GameObjectType::Orb
-        //                                              : (i == 3) ? GameObjectType::Pad
-        //                                              : (i == 4) ? GameObjectType::PortalB
-        //                                              : (i == 5) ? GameObjectType::PortalY
-        //                                                         : GameObjectType::Trigger);
-        //         b2->setPosition(x * ObjectChunk::CELL_SIZE, y * ObjectChunk::CELL_SIZE);
+    // for (int i = 0; i < 1; i++)
+    // {
+    //     auto c = ObjectChunk::create();
+    //     for (int x = 0; x < ObjectChunk::CHUNK_SIZE; x++)
+    //     {
+    //         for (int y = 0; y < ObjectChunk::CHUNK_SIZE; y++)
+    //         {
+    //             auto b2 = GameObject::createFromType((i == 0)   ? GameObjectType::Block
+    //                                                  : (i == 1) ? GameObjectType::Spike
+    //                                                  : (i == 2) ? GameObjectType::Orb
+    //                                                  : (i == 3) ? GameObjectType::Pad
+    //                                                  : (i == 4) ? GameObjectType::PortalB
+    //                                                  : (i == 5) ? GameObjectType::PortalY
+    //                                                             : GameObjectType::Trigger);
+    //             b2->setPosition(x * ObjectChunk::CELL_SIZE, y * ObjectChunk::CELL_SIZE);
 
-        //         c->addObjectToChunk(b2);
-        //     }
-        // }
+    //             c->addObjectToChunk(b2);
+    //         }
+    //     }
 
-        c->setChunkCoords(i, 0);
-        this->contentNode->addChild(c);
-        this->chunks.pushBack(c);
-    }
+    //     c->setChunkCoords(i, 0);
+    //     this->contentNode->addChild(c);
+    //     this->chunks.pushBack(c);
+    // }
     this->cullChunks();
 
     _listener               = ax::EventListenerTouchOneByOne::create();
@@ -77,26 +77,105 @@ int EditorScene::snapClickToBlock(float x, float y)
 
 bool EditorScene::onTouchBegan(ax::Touch* touch, ax::Event* event)
 {
+    this->isDragging = false;
     return true;
 }
 
 void EditorScene::onTouchMoved(ax::Touch* touch, ax::Event* event)
 {
-    ax::Vec2 delta = touch->getDelta();
-    this->contentNode->setPosition(this->contentNode->getPosition() + delta);
-    if (this->contentNode->getPositionX() > 200.0F)
+    if (!this->isDragging)
     {
-        this->contentNode->setPositionX(200.0F);
+        float dist = touch->getStartLocation().distance(touch->getLocation());
+        if (dist > DRAG_MAX_OFFSET)
+        {
+            this->isDragging = true;
+        }
     }
-    if (this->contentNode->getPositionY() > 150.0F)
+    if (this->isDragging)
     {
-        this->contentNode->setPositionY(150.0F);
+        ax::Vec2 delta = touch->getDelta();
+        this->contentNode->setPosition(this->contentNode->getPosition() + delta);
+        if (this->contentNode->getPositionX() > 200.0F)
+        {
+            this->contentNode->setPositionX(200.0F);
+        }
+        if (this->contentNode->getPositionY() > 150.0F)
+        {
+            this->contentNode->setPositionY(150.0F);
+        }
+        this->cullChunks();
     }
-
-    this->cullChunks();
 }
 
-void EditorScene::onTouchEnded(ax::Touch* touch, ax::Event* event) {}
+void EditorScene::onTouchEnded(ax::Touch* touch, ax::Event* event)
+{
+    if (!this->isDragging)
+    {
+        ax::Vec2 screenClickPos = touch->getLocation();
+        this->handleCellClick(screenClickPos);
+    }
+
+    this->isDragging = false;
+}
+
+void EditorScene::handleCellClick(const ax::Vec2& pos)
+{
+    // AXLOGD("click x: {}, y: {}", pos.x, pos.y);
+    // AXLOGD("click+levelPos x: {}, y: {}", std::floor(pos.x + -this->contentNode->getPositionX()),
+    //    std::floor(pos.y + -this->contentNode->getPositionY()));
+
+    int clickX = std::floor(pos.x - this->contentNode->getPositionX());
+    int clickY = std::floor(pos.y - this->contentNode->getPositionY());
+    if (clickX < 0 || clickY < 0)
+    {
+        return;
+    }
+
+    int cellX = clickX / static_cast<int>(ObjectChunk::CELL_SIZE);
+    int cellY = clickY / static_cast<int>(ObjectChunk::CELL_SIZE);
+
+    if (cellX >= MAX_UNITS_BY_X || cellY >= MAX_UNITS_BY_Y)
+    {
+        return;
+    }
+
+    AXLOGD("click to cell: x: {}, y: {}", cellX, cellY);
+
+    this->addObjectToCell(cellX, cellY);
+}
+
+void EditorScene::addObjectToCell(int cellX, int cellY)
+{
+    auto object = GameObject::createFromType(GameObjectType::Block);
+    object->setPosition(static_cast<float>(cellX), static_cast<float>(cellY));
+    auto chunk = this->getChunkByCell(cellX, cellY);
+    if (chunk == nullptr)
+    {
+        chunk = ObjectChunk::create();
+        AXLOGD("chunk coords: {}, {}", std::floor(cellX / ObjectChunk::CELL_SIZE),
+               std::floor(cellY / ObjectChunk::CHUNK_SIZE));
+        chunk->setChunkCoords(std::floor(cellX / ObjectChunk::CHUNK_SIZE), std::floor(cellY / ObjectChunk::CHUNK_SIZE));
+        this->contentNode->addChild(chunk);
+        this->chunks.pushBack(chunk);
+        this->cullChunks();
+    }
+    chunk->addObjectToChunk(object);
+}
+
+ObjectChunk* EditorScene::getChunkByCell(int cellX, int cellY)
+{
+    int chunkX = cellX / ObjectChunk::CHUNK_SIZE;
+    int chunkY = cellY / ObjectChunk::CHUNK_SIZE;
+
+    for (ObjectChunk* chunk : this->chunks)
+    {
+        if (chunk->getChunkX() == chunkX && chunk->getChunkY() == chunkY)
+        {
+            return chunk;
+        }
+    }
+    return nullptr;
+}
 
 void EditorScene::cullChunks()
 {
@@ -106,12 +185,14 @@ void EditorScene::cullChunks()
     float viewLeft  = -this->contentNode->getPositionX() - chunkPixelSize;
     float viewRight = -this->contentNode->getPositionX() + visibleSize.width + chunkPixelSize;
 
-    int minIdx = std::max(0, static_cast<int>(viewLeft / chunkPixelSize));
-    int maxIdx = static_cast<int>(viewRight / chunkPixelSize);
+    int minChunkX = static_cast<int>(std::floor(viewLeft / chunkPixelSize));
+    int maxChunkX = static_cast<int>(std::floor(viewRight / chunkPixelSize));
 
-    for (int i = 0; i < this->chunks.size(); ++i)
+    for (ObjectChunk* chunk : this->chunks)
     {
-        bool isVisible = (i >= minIdx && i <= maxIdx);
-        this->chunks.at(i)->setVisible(isVisible);
+        int cx = chunk->getChunkX();
+
+        bool isVisible = (cx >= minChunkX && cx <= maxChunkX);
+        chunk->setVisible(isVisible);
     }
 }
