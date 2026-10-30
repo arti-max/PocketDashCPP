@@ -21,6 +21,8 @@
    { "name": "Layer", "opacity": 255, "blendMode": "normal" }
   ],
   "slices": [
+   { "name": "chain_large_02", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 0, "w": 16, "h": 16 } }] },
+   { "name": "chain_large_01", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 16, "w": 16, "h": 16 } }] },
    { "name": "select_bounds", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 96, "w": 16, "h": 16 } }] },
    { "name": "spike_05", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 112, "y": 32, "w": 16, "h": 16 } }] },
    { "name": "achievments_menu_ico", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 320, "y": 64, "w": 32, "h": 32 } }] },
@@ -73,7 +75,6 @@
    { "name": "player_1_01", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 480, "y": 0, "w": 16, "h": 16 } }] },
    { "name": "player_0_01", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 464, "y": 0, "w": 16, "h": 16 } }] },
    { "name": "chain", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 160, "y": 16, "w": 16, "h": 16 } }] },
-   { "name": "chain_large", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 0, "w": 16, "h": 32 } }] },
    { "name": "crystal", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 160, "y": 48, "w": 16, "h": 16 } }] },
    { "name": "like_ico", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 208, "y": 64, "w": 16, "h": 16 } }] },
    { "name": "spark", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 208, "y": 80, "w": 16, "h": 16 } }] },
@@ -116,7 +117,7 @@
    { "name": "pad_01", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 64, "y": 0, "w": 16, "h": 16 } }] },
    { "name": "orb_01_1", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 32, "y": 16, "w": 16, "h": 16 } }] },
    { "name": "orb_01", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 32, "y": 0, "w": 16, "h": 16 } }] },
-   { "name": "Spike_01", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 16, "y": 16, "w": 16, "h": 16 } }] },
+   { "name": "spike_01", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 16, "y": 16, "w": 16, "h": 16 } }] },
    { "name": "block_01", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 0, "y": 16, "w": 16, "h": 16 } }] }
   ]
  }

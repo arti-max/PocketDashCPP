@@ -23,32 +23,11 @@ bool EditorScene::init()
 
     this->addChild(background, -100);
 
-    this->initBlockPanel(visibleSize, origin);
+    this->selectLayer = BlockSelectLayer::create();
+    this->addChild(this->selectLayer, 10);
 
-    // for (int i = 0; i < 1; i++)
-    // {
-    //     auto c = ObjectChunk::create();
-    //     for (int x = 0; x < ObjectChunk::CHUNK_SIZE; x++)
-    //     {
-    //         for (int y = 0; y < ObjectChunk::CHUNK_SIZE; y++)
-    //         {
-    //             auto b2 = GameObject::createFromType((i == 0)   ? GameObjectType::Block
-    //                                                  : (i == 1) ? GameObjectType::Spike
-    //                                                  : (i == 2) ? GameObjectType::Orb
-    //                                                  : (i == 3) ? GameObjectType::Pad
-    //                                                  : (i == 4) ? GameObjectType::PortalB
-    //                                                  : (i == 5) ? GameObjectType::PortalY
-    //                                                             : GameObjectType::Trigger);
-    //             b2->setPosition(x * ObjectChunk::CELL_SIZE, y * ObjectChunk::CELL_SIZE);
+    // TODO: load level data from save
 
-    //             c->addObjectToChunk(b2);
-    //         }
-    //     }
-
-    //     c->setChunkCoords(i, 0);
-    //     this->contentNode->addChild(c);
-    //     this->chunks.pushBack(c);
-    // }
     this->cullChunks();
 
     _listener               = ax::EventListenerTouchOneByOne::create();
@@ -61,15 +40,6 @@ bool EditorScene::init()
 }
 
 void EditorScene::update(float dt) {}
-void EditorScene::initBlockPanel(ax::Vec2 visibleSize, ax::Vec2 origin)
-{
-    float panelWidth  = visibleSize.width - 180.0F;
-    float panelHeight = 120.0F;
-
-    auto rect = ax::LayerColor::create(ax::Color4B(0, 0, 0, 120), panelWidth, panelHeight);
-    rect->setPosition(origin.x + (visibleSize.width - panelWidth) * 0.5F, origin.y + 10.0F);
-    this->addChild(rect, 10);
-}
 int EditorScene::snapClickToBlock(float x, float y)
 {
     return 0;
@@ -146,7 +116,7 @@ void EditorScene::handleCellClick(const ax::Vec2& pos)
 
 void EditorScene::addObjectToCell(int cellX, int cellY)
 {
-    auto object = GameObject::createFromType(GameObjectType::Block);
+    auto object = GameObject::createFromType(this->selectLayer->getSelectedType());
     object->setPosition(static_cast<float>(cellX), static_cast<float>(cellY));
     auto chunk = this->getChunkByCell(cellX, cellY);
     if (chunk == nullptr)

@@ -2,6 +2,7 @@
 #include "ObjectChunk.h"
 #include "axmol.h"
 #include "GridLayer.h"
+#include "BlockSelectLayer.h"
 
 class EditorScene : public ax::Scene
 {
@@ -17,7 +18,6 @@ public:
     bool init() override;
     void update(float dt) override;
 
-    void initBlockPanel(ax::Vec2 visibleSize, ax::Vec2 origin);
     int snapClickToBlock(float x, float y);  // returns cell id
     void handleCellClick(const ax::Vec2& pos);
     void addObjectToCell(int cellX, int cellY);
@@ -33,8 +33,9 @@ public:
 private:
     ax::Vector<ObjectChunk*> chunks;
 
-    ax::Node* contentNode = nullptr;
-    GridLayer* gridLayer  = nullptr;
+    ax::Node* contentNode         = nullptr;
+    GridLayer* gridLayer          = nullptr;
+    BlockSelectLayer* selectLayer = nullptr;
 
     bool isDragging = false;
 

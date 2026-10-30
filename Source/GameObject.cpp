@@ -44,6 +44,15 @@ bool GameObject::initWithType(GameObjectType type)
     case GameObjectType::PortalY:
         frameName = "portal_02.png";
         break;
+    case GameObjectType::ChainLarge0:
+        frameName = "chain_large_01.png";
+        break;
+    case GameObjectType::ChainLarge1:
+        frameName = "chain_large_02.png";
+        break;
+    case GameObjectType::Trigger:
+        frameName = "trigger_01.png";
+        break;
     default:
         frameName = "player_0_01.png";
         break;

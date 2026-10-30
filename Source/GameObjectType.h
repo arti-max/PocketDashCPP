@@ -9,5 +9,6 @@ enum class GameObjectType : int
     Pad,
     Orb,
     Trigger,
-    Opacity,
+    ChainLarge0,
+    ChainLarge1,
 };
