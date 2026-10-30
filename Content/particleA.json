@@ -1,0 +1,38 @@
+{
+    "textureFileName":"square.png",
+    "startColorGreen":1.0,
+    "startColorBlue":1.0,
+    "startColorRed":1.0,
+
+    "startColorVarianceRed":0,
+    "startColorVarianceGreen":0,
+    "startColorVarianceBlue":0,
+
+    "finishColorVarianceRed":0,
+    "finishColorVarianceGreen":0,
+    "finishColorVarianceBlue":0,
+
+    "finishColorGreen":1,
+    "finishColorBlue":1,
+    "finishColorRed":1,
+
+
+    "startColorAlpha":1,
+    "finishColorAlpha":1,
+
+
+    "startParticleSize":3,
+    "finishParticleSize":2,
+    "angleVariance":180,
+    "angle":-17,
+    "speed":10,
+    "tangentialAccelVariance":91,
+    "particleLifespan":1,
+    "maxParticles":53,
+    "minRadius":10,
+    "maxRadius":0,
+    "rotatePerSecond":284,
+    "duration":-1,
+
+    "blendFuncSource":770
+}

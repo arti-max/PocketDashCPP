@@ -1,0 +1,28 @@
+{
+    "textureFileName":"square.png",
+
+    "sc":"color1",
+    "fc":"color2",
+
+    "startColorAlpha":1,
+    "finishColorAlpha":1,
+
+    "emitterType":0,
+
+    "speed":63,
+    "speedVariance":131,
+
+    "sourcePositionVariancex":0,
+
+
+
+    "startParticleSize":4,
+    "finishParticleSize":2,
+    "angleVariance":180,
+    "angle":-88,
+    "particleLifespan":0.4,
+    "maxParticles":58,
+    "duration":0.28,
+
+    "blendFuncSource":770
+}

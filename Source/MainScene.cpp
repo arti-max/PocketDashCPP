@@ -23,7 +23,11 @@
  THE SOFTWARE.
  ****************************************************************************/
 
+// Это сцена для тестов, тут я познаю axmol, хпх
+
 #include "MainScene.h"
+#include "cocos2d.h"
+#include "ui/UISlider.h"
 
 using namespace ax;
 
@@ -58,17 +62,20 @@ bool MainScene::init()
     //    you may modify it.
 
     // add a "close" icon to exit the progress. it's an autorelease object
-    auto closeItem = MenuItemImage::create("CloseNormal.png", "CloseSelected.png",
-                                           AX_CALLBACK_1(MainScene::menuCloseCallback, this));
+    auto closeItem = MenuItemSprite::create(ax::Sprite::createWithSpriteFrameName("close_btn.png"),
+                                            ax::Sprite::createWithSpriteFrameName("gray_btn.png"),
+                                            AX_CALLBACK_1(MainScene::menuCloseCallback, this));
+
+    closeItem->setScale(4.0F);
 
     if (closeItem == nullptr || closeItem->getContentSize().width <= 0 || closeItem->getContentSize().height <= 0)
     {
-        problemLoading("'CloseNormal.png' and 'CloseSelected.png'");
+        problemLoading("'close_btn.png' and 'close_btn.png'");
     }
     else
     {
-        float x = safeOrigin.x + safeArea.size.width - closeItem->getContentSize().width / 2;
-        float y = safeOrigin.y + closeItem->getContentSize().height / 2;
+        float x = safeOrigin.x + safeArea.size.width - closeItem->getContentSize().width * 4.0 / 2;
+        float y = safeOrigin.y + closeItem->getContentSize().height * 4.0 / 2;
         closeItem->setPosition(Vec2(x, y));
     }
 
@@ -117,10 +124,11 @@ bool MainScene::init()
         this->addChild(label, 1);
     }
     // add "HelloWorld" splash screen"
-    auto sprite = Sprite::create("HelloWorld.png"sv);
+    auto sprite = Sprite::createWithSpriteFrameName("pd_logo.png");
+    sprite->setScale(2.0F);
     if (sprite == nullptr)
     {
-        problemLoading("'HelloWorld.png'");
+        problemLoading("'pd_logo.png'");
     }
     else
     {
@@ -135,6 +143,27 @@ bool MainScene::init()
 
         drawNode->drawRect(safeArea.origin + Vec2(1, 1), safeArea.origin + safeArea.size, Color4F::BLUE);
     }
+
+    auto slider = ax::ui::Slider::create();
+    slider->setScale9Enabled(true);
+
+    slider->loadBarTexture("slider_line_blue_off.png", ax::ui::Widget::TextureResType::PLIST);
+    slider->loadProgressBarTexture("slider_line_blue.png", ax::ui::Widget::TextureResType::PLIST);
+    slider->loadSlidBallTextures("slider_ico_blue.png", "slider_ico_blue.png", "",
+                                 ax::ui::Widget::TextureResType::PLIST);
+    slider->setPercent(50);
+    slider->setPosition(ax::Vec2(200, 100));
+    slider->addEventListener([](ax::Ref* sender, ax::ui::Slider::EventType type) {
+        if (type == ax::ui::Slider::EventType::ON_PERCENTAGE_CHANGED)
+        {
+            auto* s     = static_cast<ax::ui::Slider*>(sender);
+            int percent = s->getPercent();
+            AXLOGD("Slider: {}", percent);
+        }
+    });
+    slider->setScale(4.0F);
+    slider->setContentSize(ax::Size(60.0F, 16.0F));
+    this->addChild(slider);
 
     // scheduleUpdate() is required to ensure update(float) is called on every loop
     scheduleUpdate();
@@ -295,3 +324,5 @@ MainScene::~MainScene()
         _eventDispatcher->removeEventListener(_mouseListener);
     _sceneID = -1;
 }
+
+// TODO: EditorScene.h,.cpp and other. And also put assets to Content/

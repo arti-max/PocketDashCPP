@@ -1,0 +1,18 @@
+{
+    "user" : {
+        "icon":1,
+        "color1":1,
+        "color2":2,
+        "udid":null,
+        "playerName":"player"
+    },
+
+    "levels" : {
+
+    },
+
+    "locals" : {
+
+    }
+
+}

@@ -25,6 +25,7 @@
 
 #include "AppDelegate.h"
 #include "MainScene.h"
+#include "editor/EditorScene.h"
 
 #define USE_AUDIO_ENGINE 1
 
@@ -33,12 +34,13 @@
 #endif
 
 #if _AX_TESTS
-#   include "doctest/doctest.h"
+#    include "doctest/doctest.h"
 #endif
 
 using namespace ax;
 
-static ax::Size designResolutionSize = ax::Size(1280, 720);
+static ax::Size designResolutionSize = ax::Size(960, 540);
+static ax::Size windowSize           = ax::Size(1280, 720);
 
 AppDelegate::AppDelegate() {}
 
@@ -59,13 +61,12 @@ void AppDelegate::initGfxContextAttrs()
 bool AppDelegate::applicationDidFinishLaunching()
 {
     // initialize director
-    auto director = Director::getInstance();
-    auto renderView   = director->getRenderView();
+    auto director   = Director::getInstance();
+    auto renderView = director->getRenderView();
     if (!renderView)
     {
 #if (AX_TARGET_PLATFORM != AX_PLATFORM_ANDROID) && (AX_TARGET_PLATFORM != AX_PLATFORM_IOS)
-        renderView = RenderViewImpl::createWithRect(
-            "PocketDash", ax::Rect(0, 0, designResolutionSize.width, designResolutionSize.height));
+        renderView = RenderViewImpl::createWithRect("PocketDash", ax::Rect(0, 0, windowSize.width, windowSize.height));
 #else
         renderView = RenderViewImpl::create("PocketDash");
 #endif
@@ -76,15 +77,24 @@ bool AppDelegate::applicationDidFinishLaunching()
     director->setStatsDisplay(true);
 
     // set FPS. the default value is 1.0/60 if you don't call this
-    director->setAnimationInterval(1.0f / 60);
+    director->setAnimationInterval(1.0F / 60);
 
     // Set the design resolution
     renderView->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height,
-                                    ResolutionPolicy::SHOW_ALL);
+                                        ResolutionPolicy::SHOW_ALL);
 
 #if !_AX_TESTS
+
+    ax::SpriteFrameCache::getInstance()->addSpriteFramesWithFile("PD-gameSheet.plist");
+    auto* frame = ax::SpriteFrameCache::getInstance()->getSpriteFrameByName("pd_logo.png");
+    if (frame && frame->getTexture())
+    {
+        frame->getTexture()->setAliasTexParameters();
+    }
+
     // create a scene. it's an autorelease object
-    auto scene = utils::createInstance<MainScene>();
+    // auto scene = utils::createInstance<MainScene>();
+    auto scene = EditorScene::create();
 
     // run
     director->runWithScene(scene);
@@ -116,7 +126,8 @@ void AppDelegate::applicationWillEnterForeground()
 void AppDelegate::applicationWillQuit() {}
 
 #if _AX_TESTS
-int AppDelegate::run(int argc, char** argv) {
+int AppDelegate::run(int argc, char** argv)
+{
     AXLOGI("Running unit tests...\n");
     fflush(stdout);
     AXLOGI("Default resource path: {}\n", FileUtils::getInstance()->getDefaultResourceRootPath());
@@ -131,17 +142,17 @@ int AppDelegate::run(int argc, char** argv) {
 
     doctest::Context context;
 
-    //context.addFilter("test-case-exclude", "*math*"); // exclude test cases with "math" in their name
-    //context.setOption("abort-after", 5);              // stop test execution after 5 failed assertions
+    // context.addFilter("test-case-exclude", "*math*"); // exclude test cases with "math" in their name
+    // context.setOption("abort-after", 5);              // stop test execution after 5 failed assertions
 
-    //context.setOption("order-by", "name");            // sort the test cases by their name
+    // context.setOption("order-by", "name");            // sort the test cases by their name
 
     context.applyCommandLine(argc, argv);
 
     // overrides
-    context.setOption("no-breaks", true);             // don't break in the debugger when assertions fail
+    context.setOption("no-breaks", true);  // don't break in the debugger when assertions fail
 
-    int res = context.run(); // run
+    int res = context.run();  // run
     return res;
 }
 #endif
