@@ -13,6 +13,11 @@ Diagnostics:
       - readability-*
     Remove:
       - readability-identifier-length
+      - readability-magic-numbers
+      - readability-braces-around-statements
+      - readability-qualified-auto
+      - readability-convert-member-functions-to-static
+      - readability-else-after-return
 
 InlayHints:
   Designators: Yes

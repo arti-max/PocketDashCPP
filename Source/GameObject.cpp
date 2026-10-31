@@ -26,36 +26,16 @@ bool GameObject::initWithType(GameObjectType type)
     std::string_view frameName;
     switch (type)
     {
-    case GameObjectType::Block:
-        frameName = "block_01.png";
-        break;
-    case GameObjectType::Spike:
-        frameName = "spike_01.png";
-        break;
-    case GameObjectType::Orb:
-        frameName = "orb_01.png";
-        break;
-    case GameObjectType::Pad:
-        frameName = "pad_01.png";
-        break;
-    case GameObjectType::PortalB:
-        frameName = "portal_01.png";
-        break;
-    case GameObjectType::PortalY:
-        frameName = "portal_02.png";
-        break;
-    case GameObjectType::ChainLarge0:
-        frameName = "chain_large_01.png";
-        break;
-    case GameObjectType::ChainLarge1:
-        frameName = "chain_large_02.png";
-        break;
-    case GameObjectType::Trigger:
-        frameName = "trigger_01.png";
-        break;
-    default:
-        frameName = "player_0_01.png";
-        break;
+    case GameObjectType::Block: frameName = "block_01.png"; break;
+    case GameObjectType::Spike: frameName = "spike_01.png"; break;
+    case GameObjectType::Orb: frameName = "orb_01.png"; break;
+    case GameObjectType::Pad: frameName = "pad_01.png"; break;
+    case GameObjectType::PortalB: frameName = "portal_01.png"; break;
+    case GameObjectType::PortalY: frameName = "portal_02.png"; break;
+    case GameObjectType::ChainLarge0: frameName = "chain_large_01.png"; break;
+    case GameObjectType::ChainLarge1: frameName = "chain_large_02.png"; break;
+    case GameObjectType::Trigger: frameName = "trigger_01.png"; break;
+    default: frameName = "player_0_01.png"; break;
     }
 
     if (!Sprite::initWithSpriteFrameName(frameName))
@@ -66,7 +46,11 @@ bool GameObject::initWithType(GameObjectType type)
     this->type = type;
     this->setScale(SPRITE_SCALE);
 
-    this->setAnchorPoint(ax::Vec2::ZERO);
+    this->setAnchorPoint(ax::Vec2::ANCHOR_MIDDLE);
+    // if (type == GameObjectType::PortalY || type == GameObjectType::PortalB)
+    //     this->setAnchorPoint(ax::Vec2(0.0F, 1.0F / 3.0F));
+
+    if (type == GameObjectType::Trigger) this->isTrigger = true;
 
     return true;
 }

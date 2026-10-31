@@ -15,10 +15,15 @@ ColumnLimit: 120
 
 SortIncludes: false
 
+# Разрешать однострочные case и if
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortBlocksOnASingleLine: Never
+
 # Always break before braces
 BreakBeforeBraces: Custom
 BraceWrapping:
-  AfterCaseLabel: true
+  AfterCaseLabel: false
   AfterClass: true
   AfterControlStatement: true
   AfterEnum: true
@@ -52,9 +57,6 @@ AlignConsecutiveAssignments: true
 
 # Use 0 space negative offset for access modifiers
 AccessModifierOffset: -4
-
-# TODO(jmadill): Decide if we want this on. Doesn't have an "all or none" mode.
-AllowShortCaseLabelsOnASingleLine: false
 
 # Useful for spacing out functions in classes
 KeepEmptyLinesAtTheStartOfBlocks: true

@@ -61,7 +61,7 @@ void EditorScene::onTouchMoved(ax::Touch* touch, ax::Event* event)
             this->isDragging = true;
         }
     }
-    if (this->isDragging)
+    if (this->isDragging && !this->selectLayer->getSwipeMode())
     {
         ax::Vec2 delta = touch->getDelta();
         this->contentNode->setPosition(this->contentNode->getPosition() + delta);
@@ -73,7 +73,15 @@ void EditorScene::onTouchMoved(ax::Touch* touch, ax::Event* event)
         {
             this->contentNode->setPositionY(150.0F);
         }
+        if (this->contentNode->getPositionY() < -((MAX_UNITS_BY_Y - 10) * ObjectChunk::CELL_SIZE))
+        {
+            this->contentNode->setPositionY(-((MAX_UNITS_BY_Y - 10) * ObjectChunk::CELL_SIZE));
+        }
         this->cullChunks();
+    }
+    else if (this->selectLayer->getSwipeMode())
+    {
+        this->handleCellClick(touch->getLocation());
     }
 }
 
@@ -111,7 +119,13 @@ void EditorScene::handleCellClick(const ax::Vec2& pos)
 
     AXLOGD("click to cell: x: {}, y: {}", cellX, cellY);
 
-    this->addObjectToCell(cellX, cellY);
+    switch (this->selectLayer->getSelectedMode())
+    {
+    case BuildMode::BUILD: this->addObjectToCell(cellX, cellY); break;
+    case BuildMode::DELETE: this->removeObjectFromCell(cellX, cellY); break;
+    case BuildMode::EDIT: this->editObjectFromCell(cellX, cellY);
+    default: break;
+    }
 }
 
 void EditorScene::addObjectToCell(int cellX, int cellY)
@@ -130,6 +144,37 @@ void EditorScene::addObjectToCell(int cellX, int cellY)
         this->cullChunks();
     }
     chunk->addObjectToChunk(object);
+}
+
+void EditorScene::removeObjectFromCell(int cellX, int cellY)
+{
+    auto chunk = this->getChunkByCell(cellX, cellY);
+    if (chunk == nullptr) return;
+    auto obj = chunk->getObjectAt(cellX, cellY);
+    if (obj != nullptr)
+    {
+        AXLOGD("Removed: {}, {}", cellX, cellY);
+        chunk->removeObjectFromChunk(obj);
+    }
+    if (chunk->getObjectCount() <= 0)
+    {
+        this->chunks.eraseObject(chunk);
+        this->contentNode->removeChild(chunk);
+        this->cullChunks();
+    }
+}
+
+void EditorScene::editObjectFromCell(int cellX, int cellY)
+{
+    auto chunk = this->getChunkByCell(cellX, cellY);
+    if (chunk == nullptr) return;
+    auto obj = chunk->getObjectAt(cellX, cellY);
+    if (obj != nullptr)
+    {
+        if (obj->getIsTrigger()) return;
+        AXLOGD("Rotate Obj!: {}", obj->getRotation());
+        obj->setRotation(obj->getRotation() + 90.0F);
+    }
 }
 
 ObjectChunk* EditorScene::getChunkByCell(int cellX, int cellY)

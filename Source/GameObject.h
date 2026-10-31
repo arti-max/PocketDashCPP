@@ -37,6 +37,7 @@ public:
     bool getCanChangeColor() const { return canChangeColor; }
     bool getIsActivated() const { return activated; }
     bool getIsTrigger() const { return isTrigger; }
+    GameObjectType getObjectType() const { return type; }
 
     void setChunkId(int id) { chunkId = id; }
 

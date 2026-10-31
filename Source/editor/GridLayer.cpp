@@ -41,3 +41,8 @@ bool GridLayer::init(int width, int height)
 
     return true;
 }
+
+ax::Vec2 GridLayer::snapToGrid(float x, float y)
+{
+    return ax::Vec2::ZERO;
+}

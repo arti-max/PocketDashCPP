@@ -24,10 +24,10 @@ public:
     CREATE_FUNC(ObjectChunk);
     bool init() override;
 
-    GameObject* getObjectAt(float x, float y);  // global coords
+    GameObject* getObjectAt(int cellX, int cellY);  // global coords
     GameObject* getObjectAt(const ax::Vec2& pos);
 
-    ax::Vec2 globalToLocal(float x, float y) const;
+    ax::Vec2 globalToLocal(int cellX, int cellY) const;
     ax::Vec2 globalToLocal(const ax::Vec2& pos) const;
 
     int getChunkX() const { return this->x; };
@@ -36,10 +36,14 @@ public:
     void setChunkCoords(int x, int y);
 
     bool addObjectToChunk(GameObject* obj);
+    bool removeObjectFromChunk(GameObject* obj);
     int getIndexByPos(int x, int y) const;
+
+    int getObjectCount() const { return objectCount; }
 
 private:
     const int MAX_CHUNK_SIZE = 256;
+    int objectCount          = 0;
 
     std::array<ax::RefPtr<GameObject>, TOTAL_OBJECTS> objects{};
     int maxArraySize = 0;

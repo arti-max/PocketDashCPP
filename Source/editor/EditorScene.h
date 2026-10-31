@@ -21,6 +21,8 @@ public:
     int snapClickToBlock(float x, float y);  // returns cell id
     void handleCellClick(const ax::Vec2& pos);
     void addObjectToCell(int cellX, int cellY);
+    void removeObjectFromCell(int cellX, int cellY);
+    void editObjectFromCell(int cellX, int cellY);
 
     void onTouchMoved(ax::Touch* touch, ax::Event* event);
     bool onTouchBegan(ax::Touch* touch, ax::Event* event);
