@@ -41,6 +41,8 @@ public:
 
     int getObjectCount() const { return objectCount; }
 
+    void collectObjects(std::vector<GameObject*>& list) const;
+
 private:
     const int MAX_CHUNK_SIZE = 256;
     int objectCount          = 0;

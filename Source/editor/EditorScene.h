@@ -28,6 +28,11 @@ public:
     bool onTouchBegan(ax::Touch* touch, ax::Event* event);
     void onTouchEnded(ax::Touch* touch, ax::Event* event);
 
+    void onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type);
+
+    void loadLevelFromSave(int levelId);
+    bool saveLevelToSave(int levelId);
+
     void cullChunks();
 
     ObjectChunk* getChunkByCell(int cellX, int cellY);

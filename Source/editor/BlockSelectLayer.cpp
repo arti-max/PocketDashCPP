@@ -65,6 +65,12 @@ void BlockSelectLayer::initObjectButtons()
         auto btnSize = btn->getContentSize();
         icon->setPosition(btnSize.width * 0.5F, btnSize.height * 0.5F);
         icon->setScale(0.5F);
+        if (static_cast<GameObjectType>(i) == GameObjectType::PortalY ||
+            static_cast<GameObjectType>(i) == GameObjectType::PortalB)
+        {
+            icon->setScale(0.5F, 0.2F);
+            icon->setPositionX((btnSize.width * 0.5) - 2.5);
+        }
         btn->addChild(icon);
         btn->setTag(i);
 

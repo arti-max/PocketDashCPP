@@ -1,4 +1,5 @@
 #include "GameObject.h"
+#include "ObjectChunk.h"
 
 GameObject* GameObject::create(int spriteId)
 {
@@ -15,9 +16,43 @@ GameObject* GameObject::createFromType(GameObjectType type)
     delete obj;
     return nullptr;
 }
+
 GameObject* GameObject::createFromObj(std::string_view objString)
 {
-    return nullptr;
+    // id,x,y,rot;
+
+    size_t p1 = objString.find(',');
+    if (p1 == std::string_view::npos) return nullptr;
+
+    size_t p2 = objString.find(',', p1 + 1);
+    if (p2 == std::string_view::npos) return nullptr;
+
+    size_t p3 = objString.find(',', p2 + 1);
+    if (p3 == std::string_view::npos) return nullptr;
+
+    auto idStr   = objString.substr(0, p1);
+    auto posXStr = objString.substr(p1 + 1, p2 - p1 - 1);
+    auto posYStr = objString.substr(p2 + 1, p3 - p2 - 1);
+    auto rotStr  = objString.substr(p3 + 1);
+
+    int typeId = 0;
+    int objX   = 0;
+    int objY   = 0;
+    float rot  = 0.0F;
+
+    std::from_chars(idStr.data(), idStr.data() + idStr.size(), typeId);
+    std::from_chars(posXStr.data(), posXStr.data() + posXStr.size(), objX);
+    std::from_chars(posYStr.data(), posYStr.data() + posYStr.size(), objY);
+
+    rot = std::stof(std::string(rotStr));
+
+    auto* obj = GameObject::createFromType(static_cast<GameObjectType>(typeId));
+    if (obj)
+    {
+        obj->setRotation(rot);
+        obj->setPosition(static_cast<float>(objX), static_cast<float>(objY));
+    }
+    return obj;
 }
 
 bool GameObject::initWithType(GameObjectType type)
@@ -62,5 +97,23 @@ ax::Rect GameObject::getAABB() const
 
 std::string GameObject::getObjectString()
 {
-    return "";
+    std::string blockStr;
+    ObjectChunk* objChunk = static_cast<ObjectChunk*>(this->chunk);
+
+    blockStr += std::to_string(static_cast<int>(this->type));
+    blockStr += ',';
+    blockStr += std::to_string(static_cast<int>(
+        (objChunk->getChunkX() * ObjectChunk::CHUNK_SIZE * ObjectChunk::CELL_SIZE) + this->getPositionX()));
+    blockStr += ',';
+    blockStr += std::to_string(static_cast<int>(
+        (objChunk->getChunkY() * ObjectChunk::CHUNK_SIZE * ObjectChunk::CELL_SIZE) + this->getPositionY()));
+    blockStr += ',';
+    blockStr += std::to_string(static_cast<int>(std::floor(this->getRotation())));
+    if (this->isTrigger)
+    {
+        blockStr += "5,0,255,0";  // fadetime,r,g,b (fade time in ms - 0.fadetime 100 = 1, 5 = 0.05, 50 = 0.5)
+    }
+    blockStr += ';';
+
+    return blockStr;
 }

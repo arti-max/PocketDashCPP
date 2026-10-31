@@ -1,4 +1,5 @@
 #include "EditorScene.h"
+#include "SaveManager.h"
 
 bool EditorScene::init()
 {
@@ -6,6 +7,8 @@ bool EditorScene::init()
     {
         return false;
     }
+
+    SaveManager::initSaveFile();  // remove in future
 
     auto visibleSize = _director->getVisibleSize();
     auto origin      = _director->getVisibleOrigin();
@@ -26,8 +29,16 @@ bool EditorScene::init()
     this->selectLayer = BlockSelectLayer::create();
     this->addChild(this->selectLayer, 10);
 
-    // TODO: load level data from save
+    auto exitBtn = ax::ui::Button::create("pause_btn.png", "", "", ax::ui::Widget::TextureResType::PLIST);
+    exitBtn->setPosition(ax::Vec2(visibleSize.width - (exitBtn->getContentSize().width + 10),
+                                  visibleSize.height - (exitBtn->getContentSize().height + 10)));
+    exitBtn->setPressedActionEnabled(true);
+    exitBtn->setScale(2.5F);
+    exitBtn->addTouchEventListener(AX_CALLBACK_2(EditorScene::onExitButtonClicked, this));
+    this->addChild(exitBtn, 10);
 
+    // TODO: load level data from save
+    this->loadLevelFromSave(0);
     this->cullChunks();
 
     _listener               = ax::EventListenerTouchOneByOne::create();
@@ -209,5 +220,84 @@ void EditorScene::cullChunks()
 
         bool isVisible = (cx >= minChunkX && cx <= maxChunkX);
         chunk->setVisible(isVisible);
+    }
+}
+
+// BlockID,posX,posY,rot;
+void EditorScene::loadLevelFromSave(int levelId)
+{
+    std::string levelData = SaveManager::loadLocalLevel(levelId);
+    if (levelData.empty()) return;
+
+    size_t start = 0;
+
+    while (start < levelData.size())
+    {
+        size_t end = levelData.find(';', start);
+
+        std::string_view blockStr;
+        if (end == std::string_view::npos)  // last obj
+        {
+            blockStr = std::string_view(levelData).substr(start);
+            start    = levelData.size();
+        }
+        else
+        {
+            blockStr = std::string_view(levelData).substr(start, end - start);
+            start    = end + 1;
+        }
+
+        if (blockStr.empty()) continue;
+
+        auto obj = GameObject::createFromObj(blockStr);
+        if (obj != nullptr)
+        {
+            auto pos  = obj->getPosition();
+            int cellX = std::floor(pos.x / ObjectChunk::CELL_SIZE);
+            int cellY = std::floor(pos.y / ObjectChunk::CELL_SIZE);
+            obj->setPosition(static_cast<float>(cellX), static_cast<float>(cellY));
+            auto chunk = this->getChunkByCell(cellX, cellY);
+            if (chunk == nullptr)
+            {
+                chunk = ObjectChunk::create();
+                AXLOGD("chunk coords: {}, {}", std::floor(cellX / ObjectChunk::CELL_SIZE),
+                       std::floor(cellY / ObjectChunk::CHUNK_SIZE));
+                chunk->setChunkCoords(std::floor(cellX / ObjectChunk::CHUNK_SIZE),
+                                      std::floor(cellY / ObjectChunk::CHUNK_SIZE));
+                this->contentNode->addChild(chunk);
+                this->chunks.pushBack(chunk);
+            }
+            chunk->addObjectToChunk(obj);
+        }
+    }
+}
+
+bool EditorScene::saveLevelToSave(int levelId)
+{
+    std::string dataString;
+
+    std::vector<GameObject*> objects;
+    objects.reserve(ObjectChunk::TOTAL_OBJECTS);
+
+    for (auto* chunk : this->chunks)
+    {
+        objects.clear();
+        chunk->collectObjects(objects);
+        for (GameObject* obj : objects)
+        {
+            if (obj == nullptr) continue;
+            dataString += obj->getObjectString();
+        }
+    }
+
+    return SaveManager::saveLocalLevel(dataString, levelId);
+}
+
+void EditorScene::onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type)
+{
+    if (type == ax::ui::Widget::TouchEventType::ENDED)
+    {
+        bool saved = this->saveLevelToSave(0);
+        if (!saved) AXLOGE("Failed to save level");
     }
 }

@@ -117,3 +117,16 @@ ax::Vec2 ObjectChunk::globalToLocal(const ax::Vec2& pos) const
 {
     return globalToLocal(std::floor(pos.x), std::floor(pos.y));
 }
+
+void ObjectChunk::collectObjects(std::vector<GameObject*>& list) const
+{
+    if (this->objectCount == 0) return;
+
+    for (const auto& ref : this->objects)
+    {
+        if (auto* obj = ref.get())
+        {
+            list.push_back(obj);
+        }
+    }
+}
