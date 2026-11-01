@@ -1,5 +1,6 @@
 #include "EditorScene.h"
 #include "SaveManager.h"
+#include "play/PlayScene.h"
 
 bool EditorScene::init()
 {
@@ -13,6 +14,7 @@ bool EditorScene::init()
     auto visibleSize = _director->getVisibleSize();
     auto origin      = _director->getVisibleOrigin();
 
+    // contentNode - нода, содержащая в себе блоки и сетку (перемещаемая часть редактора)
     this->contentNode = ax::Node::create();
     this->contentNode->setPosition(200.0F, 150.0F);
 
@@ -21,11 +23,13 @@ bool EditorScene::init()
 
     this->addChild(this->contentNode);
 
+    // ну типа задниц фон серый
     auto background = ax::LayerColor::create(ax::Color4B(120, 120, 120, 255), visibleSize.width, visibleSize.height);
     background->setPosition(origin);
 
     this->addChild(background, -100);
 
+    // слой выбора блоков (нижняя панелька)
     this->selectLayer = BlockSelectLayer::create();
     this->addChild(this->selectLayer, 10);
 
@@ -37,10 +41,11 @@ bool EditorScene::init()
     exitBtn->addTouchEventListener(AX_CALLBACK_2(EditorScene::onExitButtonClicked, this));
     this->addChild(exitBtn, 10);
 
-    // TODO: load level data from save
+    // загрузка сохранённого уровня
     this->loadLevelFromSave(0);
     this->cullChunks();
 
+    // настройка слушателей касания
     _listener               = ax::EventListenerTouchOneByOne::create();
     _listener->onTouchBegan = AX_CALLBACK_2(EditorScene::onTouchBegan, this);
     _listener->onTouchMoved = AX_CALLBACK_2(EditorScene::onTouchMoved, this);
@@ -128,7 +133,7 @@ void EditorScene::handleCellClick(const ax::Vec2& pos)
         return;
     }
 
-    AXLOGD("click to cell: x: {}, y: {}", cellX, cellY);
+    // AXLOGD("click to cell: x: {}, y: {}", cellX, cellY);
 
     switch (this->selectLayer->getSelectedMode())
     {
@@ -147,8 +152,8 @@ void EditorScene::addObjectToCell(int cellX, int cellY)
     if (chunk == nullptr)
     {
         chunk = ObjectChunk::create();
-        AXLOGD("chunk coords: {}, {}", std::floor(cellX / ObjectChunk::CELL_SIZE),
-               std::floor(cellY / ObjectChunk::CHUNK_SIZE));
+        // AXLOGD("chunk coords: {}, {}", std::floor(cellX / ObjectChunk::CELL_SIZE),
+        //        std::floor(cellY / ObjectChunk::CHUNK_SIZE));
         chunk->setChunkCoords(std::floor(cellX / ObjectChunk::CHUNK_SIZE), std::floor(cellY / ObjectChunk::CHUNK_SIZE));
         this->contentNode->addChild(chunk);
         this->chunks.pushBack(chunk);
@@ -164,7 +169,7 @@ void EditorScene::removeObjectFromCell(int cellX, int cellY)
     auto obj = chunk->getObjectAt(cellX, cellY);
     if (obj != nullptr)
     {
-        AXLOGD("Removed: {}, {}", cellX, cellY);
+        // AXLOGD("Removed: {}, {}", cellX, cellY);
         chunk->removeObjectFromChunk(obj);
     }
     if (chunk->getObjectCount() <= 0)
@@ -184,7 +189,7 @@ void EditorScene::editObjectFromCell(int cellX, int cellY)
     {
         if (obj->getIsTrigger()) return;
         AXLOGD("Rotate Obj!: {}", obj->getRotation());
-        obj->setRotation(obj->getRotation() + 90.0F);
+        obj->setRotation(static_cast<float>(static_cast<int>(obj->getRotation() + 90.0F) % 360));
     }
 }
 
@@ -299,5 +304,8 @@ void EditorScene::onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEven
     {
         bool saved = this->saveLevelToSave(0);
         if (!saved) AXLOGE("Failed to save level");
+        auto newScene   = PlayScene::create(0);
+        auto transition = ax::TransitionFade::create(0.5F, newScene, ax::Color3B::BLACK);
+        _director->replaceScene(transition);
     }
 }
