@@ -35,22 +35,58 @@ bool PlayerObject::initWitchSkinId(int skinId)
 
 void PlayerObject::update(float dt)
 {
-    float nx = this->getPositionX();
-    float ny = this->getPositionY();
-    if (!isOnGround())
+    if (isInAir())
     {
-        ny += vy;
-        if (ny < PlayScene::MIN_GROUND_Y)
-        {
-            ny             = PlayScene::MIN_GROUND_Y;
-            this->onGround = true;
-        }
+        this->vy += GRAVITY * dt;
     }
 
-    this->setPosition(nx, ny);
+    float nx = this->getWorldPositionX() + (this->vx * dt);
+    float ny = this->getPositionY() + (this->vy * dt);
+    if (ny < PlayScene::MIN_GROUND_Y)
+    {
+        ny             = PlayScene::MIN_GROUND_Y;
+        this->vy       = 0.0F;
+        this->onGround = true;
+        this->snapRotation();
+    }
+
+    if (isInAir() && this->getActionByTag(ROTATE_ACTION_TAG) == nullptr)
+    {
+        auto rotateAction = ax::RotateBy::create(0.55F, 180.0F);
+        rotateAction->setTag(ROTATE_ACTION_TAG);
+        this->runAction(rotateAction);
+    }
+
+    if (isOnGround() && this->isHolding)
+    {
+        this->jump();
+    }
+
+    this->setPositionY(ny);
+    this->worldX = nx;
 }
 
-void PlayerObject::popTouch() {}
-void PlayerObject::pushTouch() {}
+void PlayerObject::snapRotation()
+{
+    if (this->getActionByTag(ROTATE_ACTION_TAG) != nullptr) this->stopActionByTag(ROTATE_ACTION_TAG);
+    float currentRot = this->getRotation();
+    int newRot       = static_cast<int>(std::round(currentRot / 90)) * 90;
+    newRot           = ((newRot % 360) + 360) % 360;
+    this->setRotation(static_cast<float>(newRot));
+}
+
+void PlayerObject::popTouch()
+{
+    this->isHolding = false;
+}
+void PlayerObject::pushTouch()
+{
+    this->isHolding = true;
+    this->jump();
+}
 void PlayerObject::hitGround() {}
-void PlayerObject::jump() {}
+void PlayerObject::jump()
+{
+    this->vy       = JUMP_VELOCITY;
+    this->onGround = false;
+}

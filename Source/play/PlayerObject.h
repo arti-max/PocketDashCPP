@@ -4,6 +4,7 @@
 class PlayerObject : public GameObject
 {
 public:
+    static constexpr int ROTATE_ACTION_TAG = 0;
     static PlayerObject* create(int skinId);
     bool initWitchSkinId(int skinId);
 
@@ -20,26 +21,32 @@ public:
     void setIsDead(bool f) { isDead = f; }
     bool isOnGround() const { return onGround; }
     bool getIsDead() const { return isDead; }
-    void setInAir(bool f) { inAir = f; }
-    bool isInAir() const { return inAir; }
+    bool isInAir() const { return !onGround; }
+    float getWorldPositionX() const { return this->worldX; };
+    void setBaseWorldX(float x) { worldX = x; };
+
+    void snapRotation();
 
     void hitGround();
 
 private:
-    const float BASE_X_VELOCITY = 311.0F;
+    const float BASE_X_VELOCITY = 381.0F;
+    const float GRAVITY         = -2920.0F;
+    const float JUMP_VELOCITY   = 840.0F;
 
     ax::Sprite* skin0 = nullptr;
     ax::Sprite* skin1 = nullptr;
     ax::Color3B color1;
     ax::Color3B color2;
 
-    float vy = -5.0F;
+    float vy = 0.0F;
     float vx = BASE_X_VELOCITY;
+
+    float worldX = 0.0F;
 
     bool onGround  = false;
     bool isHolding = false;
     bool doJump    = false;
     bool isDead    = false;
     bool doRotate  = false;
-    bool inAir     = false;
 };

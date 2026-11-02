@@ -22,7 +22,11 @@ public:
     void update(float dt) override;
     void tick(float dt);
     void checkCollisions();
-    void updateCamera();
+    void updateCamera(float dt);
+    void cullChunks();
+
+    bool onTouchBegan(ax::Touch* touch, ax::Event* event);
+    void onTouchEnded(ax::Touch* touch, ax::Event* event);
 
     void loadLevel(int levelId);
 
@@ -34,4 +38,7 @@ private:
     PlayerObject* player   = nullptr;
     ax::Node* contentLayer = nullptr;
     ax::Node* groundLayer  = nullptr;
+    ax::Node* uiLayer      = nullptr;
+
+    ax::EventListenerTouchOneByOne* _listener = nullptr;
 };
