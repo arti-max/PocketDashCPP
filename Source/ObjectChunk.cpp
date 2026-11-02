@@ -60,6 +60,16 @@ bool ObjectChunk::addObjectToChunk(GameObject* obj)
     obj->setPosition((localX + 0.5F) * CELL_SIZE, (localY + 0.5F) * CELL_SIZE);
     obj->chunk = this;
     objectCount++;
+
+    if (obj->getObjectType() == GameObjectType::Orb && this->playMode)
+    {
+        auto ring = ax::Sprite::createWithSpriteFrameName("orb_01_1.png");
+        ring->setScale(GameObject::SPRITE_SCALE);
+        ring->setPosition(obj->getPosition());
+        this->addChild(ring);
+        this->rings.pushBack(ring);
+        obj->ring = ring;
+    }
     return true;
 }
 
@@ -153,6 +163,30 @@ void ObjectChunk::collectObjectsAround(std::vector<GameObject*>& list, int cellX
             {
                 list.push_back(obj);
             }
+        }
+    }
+}
+
+void ObjectChunk::getRingNodes(std::vector<ax::Sprite*>& list)
+{
+    if (this->objectCount == 0) return;
+
+    for (auto* ring : this->rings)
+    {
+        list.push_back(ring);
+    }
+}
+
+void ObjectChunk::getOrbNodes(std::vector<GameObject*>& list)
+{
+    if (this->objectCount == 0) return;
+
+    for (const auto& ref : this->objects)
+    {
+        if (auto* obj = ref.get())
+        {
+            if (obj->getObjectType() != GameObjectType::Orb) continue;
+            list.push_back(obj);
         }
     }
 }

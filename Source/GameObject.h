@@ -43,7 +43,8 @@ public:
 
     std::string getObjectString();
 
-    ax::Node* chunk = nullptr;
+    ax::Node* chunk  = nullptr;
+    ax::Sprite* ring = nullptr;
 
 private:
     ax::Rect bbox;

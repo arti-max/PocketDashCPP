@@ -24,8 +24,11 @@ public:
     bool isAlive() const { return !isDead; }
     bool isInAir() const { return !onGround; }
     float getWorldPositionX() const { return this->worldX; }
+    float getWorldPositionY() const { return this->worldY; }
+    void setWorldPositionY(float y) { this->worldY = y; }
     void setBaseWorldX(float x) { worldX = x; };
     int getGravityMul() const { return isUpside ? -1 : 1; }
+    void setVelocityY(float vel) { vy = vel; }
 
     void collideWithObject(GameObject* obj);
     void collideWithHazard(GameObject* obj);
@@ -57,6 +60,7 @@ private:
     float vx = BASE_X_VELOCITY;
 
     float worldX = 0.0F;
+    float worldY = 0.0F;
 
     bool isUpside = false;
 

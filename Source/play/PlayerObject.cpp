@@ -42,11 +42,11 @@ void PlayerObject::update(float dt)
     }
 
     float nx = this->getWorldPositionX() + (this->vx * dt);
-    float ny = this->getPositionY() + ((this->vy * dt) * this->getGravityMul());
+    float ny = this->worldY + ((this->vy * dt) * this->getGravityMul());
 
-    if (ny <= PlayScene::MIN_GROUND_Y)
+    if (ny <= 0.0F)
     {
-        ny             = PlayScene::MIN_GROUND_Y;
+        ny             = 0.0F;
         this->vy       = 0.0F;
         this->onGround = true;
         this->snapRotation();
@@ -64,7 +64,7 @@ void PlayerObject::update(float dt)
         this->jump();
     }
 
-    this->setPositionY(ny);
+    this->worldY = ny;
     this->worldX = nx;
 }
 
@@ -84,6 +84,7 @@ void PlayerObject::popTouch()
 void PlayerObject::pushTouch()
 {
     this->isHolding = true;
+    this->doJump    = true;
     this->jump();
 }
 void PlayerObject::hitGround()
@@ -95,6 +96,7 @@ void PlayerObject::hitGround()
 void PlayerObject::jump()
 {
     if (isInAir()) return;
+    this->doJump   = false;
     this->vy       = JUMP_VELOCITY;
     this->onGround = false;
 }
@@ -106,8 +108,7 @@ int PlayerObject::getCellX() const
 
 int PlayerObject::getCellY() const
 {
-    return static_cast<int>(
-        std::floor((this->getPositionY() - PlayScene::MIN_GROUND_Y_CONTENT) / ObjectChunk::CELL_SIZE));
+    return static_cast<int>(std::floor(this->worldY / ObjectChunk::CELL_SIZE));
 }
 
 ax::Rect PlayerObject::getAABB() const
@@ -116,14 +117,14 @@ ax::Rect PlayerObject::getAABB() const
     float h = OBJECT_SPRITE_SIZE * SPRITE_SCALE;
 
     float cx = this->getWorldPositionX();
-    float cy = this->getPositionY();
+    float cy = this->worldY + (h * 0.5F);
 
     return ax::Rect(cx - (w * 0.5F), cy - (h * 0.5F), w, h);
 }
 
 void PlayerObject::drop()
 {
-    if (this->getPositionY() > PlayScene::MIN_GROUND_Y && this->isOnGround())
+    if (this->worldY > 0.0F && this->isOnGround())
     {
         this->onGround = false;
     }
@@ -144,7 +145,7 @@ void PlayerObject::collideWithObject(GameObject* obj)
     bool isAboveBlock = (pAABB.getMinY() >= oAABB.getMaxY() - 14.0F);
     if (isFalling && isAboveBlock && intersectsByX >= 4.0F)
     {
-        this->setPositionY(oAABB.getMaxY() + (pAABB.size.height * 0.5F));
+        this->worldY = oAABB.getMaxY();
         this->hitGround();
         return;
     }
@@ -162,6 +163,18 @@ void PlayerObject::collideWithHazard(GameObject* obj)
 {
     this->isDead = true;
 }
-void PlayerObject::collideWithOrb(GameObject* obj) {}
-void PlayerObject::collideWithPad(GameObject* obj) {}
+void PlayerObject::collideWithOrb(GameObject* obj)
+{
+    if (this->doJump)
+    {
+        this->vy       = JUMP_VELOCITY * this->getGravityMul();
+        this->onGround = false;
+        this->doJump   = false;
+    }
+}
+void PlayerObject::collideWithPad(GameObject* obj)
+{
+    this->vy       = (JUMP_VELOCITY * 1.2F) * this->getGravityMul();
+    this->onGround = false;
+}
 void PlayerObject::collideWithPortal(GameObject* obj) {}

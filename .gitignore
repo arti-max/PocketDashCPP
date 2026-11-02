@@ -15,6 +15,7 @@ cmake-build-*/
 /obj/
 /artifacts/
 compile_commands.json
+/old/
 
 # CMake temporary & cache files
 CMakeCache.txt

@@ -44,11 +44,20 @@ public:
     void collectObjects(std::vector<GameObject*>& list) const;
     void collectObjectsAround(std::vector<GameObject*>& list, int cellX, int cellY) const;
 
+    void getRingNodes(std::vector<ax::Sprite*>& list);
+    void getOrbNodes(std::vector<GameObject*>& list);
+
+    void setPlayMode() { playMode = true; }
+
 private:
     const int MAX_CHUNK_SIZE = 256;
     int objectCount          = 0;
 
+    bool playMode = false;
+
     std::array<ax::RefPtr<GameObject>, TOTAL_OBJECTS> objects{};
+    ax::Vector<ax::Sprite*> rings;
+
     int maxArraySize = 0;
 
     int width  = 0;

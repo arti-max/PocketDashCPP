@@ -1,4 +1,6 @@
 #include "PlayScene.h"
+
+#include <algorithm>
 #include "SaveManager.h"
 
 PlayScene* PlayScene::create(int levelId)
@@ -27,6 +29,13 @@ bool PlayScene::initWithLevelid(int levelId)
 
     _ticker.setCallback(AX_CALLBACK_1(PlayScene::tick, this));
 
+    this->baseCameraMinY = origin.y + (visibleSize.height / 5);
+    this->cameraMinY     = this->baseCameraMinY;
+    this->cameraMaxY     = visibleSize.height - (visibleSize.height / 4);
+
+    this->baseContentY = MIN_GROUND_Y_CONTENT;
+    this->baseGroundY  = 0.0F;
+
     this->groundLayer = ax::Node::create();
     this->addChild(this->groundLayer, 100);
 
@@ -46,7 +55,8 @@ bool PlayScene::initWithLevelid(int levelId)
     float screenSpawnX = (visibleSize.width / 2) - 160.0F;
     this->player       = PlayerObject::create(2);
     this->player->setPosition(ax::Vec2(screenSpawnX, MIN_GROUND_Y));
-    this->addChild(this->player);
+    this->player->setWorldPositionY(0.0F);
+    this->addChild(this->player, 50);
 
     this->contentLayer = ax::Node::create();
     this->contentLayer->setPosition(screenSpawnX, MIN_GROUND_Y_CONTENT);
@@ -80,6 +90,8 @@ void PlayScene::resetlevel()
     this->player->setBaseWorldX(0.0F);
     this->player->setPositionY(MIN_GROUND_Y);
     this->player->setOnGround(true);
+    this->player->setVelocityY(0.0F);
+    this->player->setRotation(0.0F);
     this->player->setIsDead(false);
 }
 
@@ -95,6 +107,43 @@ void PlayScene::updateCamera(float dt)
     float targetX = screenSpawnX - player->getWorldPositionX();
 
     contentLayer->setPositionX(targetX);
+
+    float targetCamBottom = camY + (visibleSize.height * 0.25F);
+    float targetCamTop    = camY + (visibleSize.height * 0.65F);
+
+    float targetCamY   = camY;
+    float playerWorldY = player->getWorldPositionY();
+
+    if (playerWorldY > targetCamTop)
+    {
+        targetCamY = playerWorldY - (visibleSize.height * 0.65F);
+    }
+    else if (playerWorldY < targetCamBottom)
+    {
+        targetCamY = playerWorldY - (visibleSize.height * 0.25F);
+    }
+
+    targetCamY = std::max(targetCamY, 0.0F);
+
+    float oldCamY = camY;
+
+    float smooth = 6.0F;
+    if (player->isOnGround())
+    {
+        smooth = 15.0F;
+    }
+    camY += (targetCamY - camY) * smooth * dt;
+
+    float renderOffset = PlayScene::MIN_GROUND_Y_CONTENT - camY;
+
+    float deltaY = oldCamY - camY;
+
+    this->contentLayer->setPositionY(renderOffset);
+    this->groundLayer->setPositionY(renderOffset - MIN_GROUND_Y_CONTENT);
+
+    float pCenterOffset = PlayerObject::OBJECT_SPRITE_SIZE * PlayerObject::SPRITE_SCALE * 0.5F;
+    player->setPositionY(renderOffset + player->getWorldPositionY() + pCenterOffset);
+
     this->cullChunks();
 }
 
@@ -105,6 +154,8 @@ void PlayScene::update(float dt)
 
 void PlayScene::tick(float dt)
 {
+    this->orbRingRotation = std::fmod(this->orbRingRotation + (180.0F * dt), 360);
+    this->updateOrbs();
     if (this->player->getIsDead())
     {
         this->deathTicks++;
@@ -116,6 +167,25 @@ void PlayScene::tick(float dt)
         this->checkCollisions();
         this->updateCamera(dt);
         this->drawHitboxes();
+    }
+}
+
+void PlayScene::updateOrbs()
+{
+    std::vector<GameObject*> orbs;
+    orbs.reserve(256);
+
+    for (ObjectChunk* chunk : this->chunks)
+    {
+        if (!chunk->isVisible()) continue;
+        if (chunk->getObjectCount() == 0) continue;
+        orbs.clear();
+        chunk->getOrbNodes(orbs);
+        for (auto* orb : orbs)
+        {
+            orb->setRotation(this->orbRingRotation);
+            orb->ring->setRotation(-this->orbRingRotation);
+        }
     }
 }
 
@@ -140,7 +210,7 @@ void PlayScene::cullChunks()
 }
 void PlayScene::checkCollisions()
 {
-    if (this->player->getPositionY() > PlayScene::MIN_GROUND_Y)
+    if (this->player->getWorldPositionY() > 0.0F)
     {
         this->player->setOnGround(false);
     }
@@ -234,6 +304,7 @@ void PlayScene::loadLevel(int levelId)
             if (chunk == nullptr)
             {
                 chunk = ObjectChunk::create();
+                chunk->setPlayMode();
                 AXLOGD("chunk coords: {}, {}", std::floor(cellX / ObjectChunk::CELL_SIZE),
                        std::floor(cellY / ObjectChunk::CHUNK_SIZE));
                 chunk->setChunkCoords(std::floor(cellX / ObjectChunk::CHUNK_SIZE),
@@ -265,8 +336,8 @@ ObjectChunk* PlayScene::getCurrentChunk()
 {
     int chunkX = (static_cast<int>(std::floor(this->player->getWorldPositionX())) / ObjectChunk::CELL_SIZE) /
                  ObjectChunk::CHUNK_SIZE;
-    int chunkY =
-        (static_cast<int>(std::floor(this->player->getPositionY())) / ObjectChunk::CELL_SIZE) / ObjectChunk::CHUNK_SIZE;
+    int chunkY = (static_cast<int>(std::floor(this->player->getWorldPositionY())) / ObjectChunk::CELL_SIZE) /
+                 ObjectChunk::CHUNK_SIZE;
     // AXLOGD("CHUNKX: {}", chunkX);
     if (chunkX < 0) return nullptr;
 
@@ -305,7 +376,8 @@ void PlayScene::drawHitboxes()
     for (GameObject* obj : objects)
     {
         ax::Rect box = obj->getAABB();
-        ax::Rect screenBox(box.origin.x + offsetX, box.origin.y, box.size.width, box.size.height);
+        ax::Rect screenBox(box.origin.x + offsetX, box.origin.y + MIN_GROUND_Y_CONTENT, box.size.width,
+                           box.size.height);
         ax::Color4F color = (obj->getObjectType() == GameObjectType::Spike) ? ax::Color4F::RED : ax::Color4F::BLUE;
         _debugDraw->drawRect(screenBox.origin, screenBox.origin + screenBox.size, color);
     }

@@ -79,9 +79,9 @@ if [[ ${TARGET_AAB} -eq 1 ]]; then
 fi
 
 if [[ "${BUILD_TYPE}" == "Release" ]]; then
-    BUILD_ARGS+=("-xb" "--config" "Release")
+    BUILD_ARGS+=("-O3")
 else
-    BUILD_ARGS+=("-xb" "--config" "Debug")
+    BUILD_ARGS+=("-O0")
 fi
 
 chmod +x proj.android/gradlew

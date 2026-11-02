@@ -26,6 +26,8 @@ public:
     void updateCamera(float dt);
     void cullChunks();
 
+    void updateOrbs();
+
     bool onTouchBegan(ax::Touch* touch, ax::Event* event);
     void onTouchEnded(ax::Touch* touch, ax::Event* event);
 
@@ -39,6 +41,20 @@ private:
     const int DEATH_TICKS = 60;
     ax::Vector<ObjectChunk*> chunks;
     Ticker _ticker{60};
+
+    float orbRingRotation = 0.0F;
+
+    float camY = 0.0F;
+
+    float cameraMinY     = 0.0F;
+    float cameraMaxY     = 0.0F;
+    float baseCameraMinY = 0.0F;
+
+    float targetOffsetY  = 0.0F;
+    float currentOffsetY = 0.0F;
+
+    float baseContentY = 0.0F;
+    float baseGroundY  = 0.0F;
 
     int deathTicks = 0;
 

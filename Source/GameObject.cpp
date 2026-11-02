@@ -97,7 +97,7 @@ ax::Rect GameObject::getAABB() const
     float h = OBJECT_SPRITE_SIZE * SPRITE_SCALE;
 
     float worldPositionX = this->getPositionX();
-    float worldPositionY = this->getPositionY() + PlayScene::MIN_GROUND_Y_CONTENT;
+    float worldPositionY = this->getPositionY();
 
     if (this->chunk)
     {
