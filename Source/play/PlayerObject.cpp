@@ -43,7 +43,8 @@ void PlayerObject::update(float dt)
 
     float nx = this->getWorldPositionX() + (this->vx * dt);
     float ny = this->getPositionY() + ((this->vy * dt) * this->getGravityMul());
-    if (ny < PlayScene::MIN_GROUND_Y)
+
+    if (ny <= PlayScene::MIN_GROUND_Y)
     {
         ny             = PlayScene::MIN_GROUND_Y;
         this->vy       = 0.0F;
@@ -120,7 +121,43 @@ ax::Rect PlayerObject::getAABB() const
     return ax::Rect(cx - (w * 0.5F), cy - (h * 0.5F), w, h);
 }
 
-void PlayerObject::collideWithObject(GameObject* obj) {}
+void PlayerObject::drop()
+{
+    if (this->getPositionY() > PlayScene::MIN_GROUND_Y && this->isOnGround())
+    {
+        this->onGround = false;
+    }
+}
+
+void PlayerObject::collideWithObject(GameObject* obj)
+{
+
+    auto pAABB = this->getAABB();
+    auto oAABB = obj->getAABB();
+
+    float intersectsByX = std::min(pAABB.getMaxX(), oAABB.getMaxX()) - std::max(pAABB.getMinX(), oAABB.getMinX());
+    float intersectsByY = std::min(pAABB.getMaxY(), oAABB.getMaxY()) - std::max(pAABB.getMinY(), oAABB.getMinY());
+
+    if (intersectsByX <= 0.0F || intersectsByY <= 0.0F) return;
+
+    bool isFalling    = (this->vy <= 0.0F);
+    bool isAboveBlock = (pAABB.getMinY() >= oAABB.getMaxY() - 14.0F);
+    if (isFalling && isAboveBlock && intersectsByX >= 4.0F)
+    {
+        this->setPositionY(oAABB.getMaxY() + (pAABB.size.height * 0.5F));
+        this->hitGround();
+        return;
+    }
+
+    if (intersectsByY > 14.0F)
+    {
+        if (pAABB.getMaxX() > oAABB.getMinX() + 6.0F && pAABB.getMinX() < oAABB.getMinX() + 14.0F)
+        {
+            this->isDead = true;
+        }
+    }
+}
+
 void PlayerObject::collideWithHazard(GameObject* obj)
 {
     this->isDead = true;

@@ -39,6 +39,7 @@ public:
     void snapRotation();
 
     void hitGround();
+    void drop();
 
     ax::Rect getAABB() const override;
 

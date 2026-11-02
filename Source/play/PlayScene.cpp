@@ -71,6 +71,18 @@ bool PlayScene::initWithLevelid(int levelId)
     return true;
 }
 
+void PlayScene::resetlevel()
+{
+    this->deathTicks   = 0;
+    auto visibleSize   = _director->getVisibleSize();
+    float screenSpawnX = (visibleSize.width / 2) - 160.0F;
+    this->contentLayer->setPosition(screenSpawnX, MIN_GROUND_Y_CONTENT);
+    this->player->setBaseWorldX(0.0F);
+    this->player->setPositionY(MIN_GROUND_Y);
+    this->player->setOnGround(true);
+    this->player->setIsDead(false);
+}
+
 void PlayScene::updateCamera(float dt)
 {
     if (!contentLayer || !player) return;
@@ -85,6 +97,7 @@ void PlayScene::updateCamera(float dt)
     contentLayer->setPositionX(targetX);
     this->cullChunks();
 }
+
 void PlayScene::update(float dt)
 {
     _ticker.update(dt);
@@ -92,11 +105,18 @@ void PlayScene::update(float dt)
 
 void PlayScene::tick(float dt)
 {
-    if (this->player->getIsDead()) return;
-    this->player->update(dt);
-    this->checkCollisions();
-    this->updateCamera(dt);
-    this->drawHitboxes();
+    if (this->player->getIsDead())
+    {
+        this->deathTicks++;
+        if (this->deathTicks >= DEATH_TICKS) this->resetlevel();
+    }
+    else
+    {
+        this->player->update(dt);
+        this->checkCollisions();
+        this->updateCamera(dt);
+        this->drawHitboxes();
+    }
 }
 
 void PlayScene::cullChunks()
@@ -120,6 +140,11 @@ void PlayScene::cullChunks()
 }
 void PlayScene::checkCollisions()
 {
+    if (this->player->getPositionY() > PlayScene::MIN_GROUND_Y)
+    {
+        this->player->setOnGround(false);
+    }
+
     auto chunk = this->getCurrentChunk();
     if (chunk == nullptr) return;
 

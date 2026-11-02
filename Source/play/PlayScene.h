@@ -30,13 +30,17 @@ public:
     void onTouchEnded(ax::Touch* touch, ax::Event* event);
 
     void loadLevel(int levelId);
+    void resetlevel();
 
     ObjectChunk* getChunkByCell(int cellX, int cellY);
     ObjectChunk* getCurrentChunk();
 
 private:
+    const int DEATH_TICKS = 60;
     ax::Vector<ObjectChunk*> chunks;
     Ticker _ticker{60};
+
+    int deathTicks = 0;
 
     int levelId            = 0;
     PlayerObject* player   = nullptr;
