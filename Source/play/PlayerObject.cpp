@@ -42,7 +42,7 @@ void PlayerObject::update(float dt)
     }
 
     float nx = this->getWorldPositionX() + (this->vx * dt);
-    float ny = this->worldY + ((this->vy * dt) * this->getGravityMul());
+    float ny = this->worldY + ((this->vy * dt) * this->getGravityMul());  // for commit
 
     if (ny <= 0.0F)
     {

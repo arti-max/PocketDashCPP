@@ -371,7 +371,7 @@ void PlayScene::drawHitboxes()
     objects.reserve(9);
     chunk->collectObjectsAround(objects, player->getCellX(), player->getCellY());
 
-    float offsetX = this->contentLayer->getPositionX();
+    float offsetX = this->contentLayer->getPositionX();  // for commit
 
     for (GameObject* obj : objects)
     {
