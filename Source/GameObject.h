@@ -32,7 +32,7 @@ public:
     void deacticate() { activated = false; }
     void setIsTrigger(bool flag) { isTrigger = flag; }
 
-    ax::Rect getAABB() const;
+    virtual ax::Rect getAABB() const;
 
     bool getCanChangeColor() const { return canChangeColor; }
     bool getIsActivated() const { return activated; }

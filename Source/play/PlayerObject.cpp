@@ -1,5 +1,6 @@
 #include "PlayerObject.h"
 #include "PlayScene.h"
+#include <fmt/format.h>
 
 PlayerObject* PlayerObject::create(int skinId)
 {
@@ -20,8 +21,8 @@ bool PlayerObject::initWitchSkinId(int skinId)
         return false;
     }
 
-    this->skin0  = ax::Sprite::createWithSpriteFrameName(std::format("player_0_0{}.png", skinId));
-    this->skin1  = ax::Sprite::createWithSpriteFrameName(std::format("player_1_0{}.png", skinId));
+    this->skin0  = ax::Sprite::createWithSpriteFrameName(fmt::format("player_0_0{}.png", skinId));
+    this->skin1  = ax::Sprite::createWithSpriteFrameName(fmt::format("player_1_0{}.png", skinId));
     this->color1 = ax::Color3B::GREEN;
     this->color2 = ax::Color3B(0, 120, 230);
     this->skin0->setColor(this->color1);
@@ -41,7 +42,7 @@ void PlayerObject::update(float dt)
     }
 
     float nx = this->getWorldPositionX() + (this->vx * dt);
-    float ny = this->getPositionY() + (this->vy * dt);
+    float ny = this->getPositionY() + ((this->vy * dt) * this->getGravityMul());
     if (ny < PlayScene::MIN_GROUND_Y)
     {
         ny             = PlayScene::MIN_GROUND_Y;
@@ -52,7 +53,7 @@ void PlayerObject::update(float dt)
 
     if (isInAir() && this->getActionByTag(ROTATE_ACTION_TAG) == nullptr)
     {
-        auto rotateAction = ax::RotateBy::create(0.55F, 180.0F);
+        auto rotateAction = ax::RotateBy::create(0.4F, 180.0F);
         rotateAction->setTag(ROTATE_ACTION_TAG);
         this->runAction(rotateAction);
     }
@@ -84,9 +85,46 @@ void PlayerObject::pushTouch()
     this->isHolding = true;
     this->jump();
 }
-void PlayerObject::hitGround() {}
+void PlayerObject::hitGround()
+{
+    this->snapRotation();
+    this->onGround = true;
+    this->vy       = 0.0F;
+}
 void PlayerObject::jump()
 {
+    if (isInAir()) return;
     this->vy       = JUMP_VELOCITY;
     this->onGround = false;
 }
+
+int PlayerObject::getCellX() const
+{
+    return static_cast<int>(std::floor(this->worldX / ObjectChunk::CELL_SIZE));
+}
+
+int PlayerObject::getCellY() const
+{
+    return static_cast<int>(
+        std::floor((this->getPositionY() - PlayScene::MIN_GROUND_Y_CONTENT) / ObjectChunk::CELL_SIZE));
+}
+
+ax::Rect PlayerObject::getAABB() const
+{
+    float w = OBJECT_SPRITE_SIZE * SPRITE_SCALE;
+    float h = OBJECT_SPRITE_SIZE * SPRITE_SCALE;
+
+    float cx = this->getWorldPositionX();
+    float cy = this->getPositionY();
+
+    return ax::Rect(cx - (w * 0.5F), cy - (h * 0.5F), w, h);
+}
+
+void PlayerObject::collideWithObject(GameObject* obj) {}
+void PlayerObject::collideWithHazard(GameObject* obj)
+{
+    this->isDead = true;
+}
+void PlayerObject::collideWithOrb(GameObject* obj) {}
+void PlayerObject::collideWithPad(GameObject* obj) {}
+void PlayerObject::collideWithPortal(GameObject* obj) {}

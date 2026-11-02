@@ -1,5 +1,6 @@
 #include "GameObject.h"
 #include "ObjectChunk.h"
+#include "play/PlayScene.h"
 
 GameObject* GameObject::create(int spriteId)
 {
@@ -92,7 +93,50 @@ bool GameObject::initWithType(GameObjectType type)
 
 ax::Rect GameObject::getAABB() const
 {
-    return ax::Rect::ZERO;
+    float w = OBJECT_SPRITE_SIZE * SPRITE_SCALE;
+    float h = OBJECT_SPRITE_SIZE * SPRITE_SCALE;
+
+    float worldPositionX = this->getPositionX();
+    float worldPositionY = this->getPositionY() + PlayScene::MIN_GROUND_Y_CONTENT;
+
+    if (this->chunk)
+    {
+        const auto* objChunk = static_cast<const ObjectChunk*>(this->chunk);
+        worldPositionX += static_cast<float>(objChunk->getChunkX() * ObjectChunk::CHUNK_SIZE * ObjectChunk::CELL_SIZE);
+        worldPositionY += static_cast<float>(objChunk->getChunkY() * ObjectChunk::CHUNK_SIZE * ObjectChunk::CELL_SIZE);
+    }
+
+    float minX = worldPositionX - (w * 0.5f);
+    float minY = worldPositionY - (h * 0.5f);
+
+    if (this->type == GameObjectType::Spike)
+    {
+        int rot = static_cast<int>(std::round(this->getRotation())) % 360;
+        if (rot < 0) rot += 360;
+
+        float padSide   = 12.0f;
+        float padTip    = 8.0f;
+        float padBottom = 8.0F;
+
+        if (rot == 0)  // up
+        {
+            return ax::Rect(minX + padSide, minY + padBottom, w - (padSide * 2.0f), h - padTip - padBottom);
+        }
+        else if (rot == 180)  // down
+        {
+            return ax::Rect(minX + padSide, minY + padTip, w - (padSide * 2.0f), h - padTip - padBottom);
+        }
+        else if (rot == 90)  // right
+        {
+            return ax::Rect(minX + padBottom, minY + padSide, w - padTip - padBottom, h - (padSide * 2.0f));
+        }
+        else if (rot == 270)  // left
+        {
+            return ax::Rect(minX + padTip, minY + padSide, w - padTip - padBottom, h - (padSide * 2.0f));
+        }
+    }
+
+    return ax::Rect(minX, minY, w, h);
 }
 
 std::string GameObject::getObjectString()

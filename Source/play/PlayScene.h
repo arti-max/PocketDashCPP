@@ -12,7 +12,8 @@
 class PlayScene : public ax::Scene
 {
 public:
-    static constexpr int MIN_GROUND_Y = 115.0F;
+    static constexpr int MIN_GROUND_Y         = 115.0F;
+    static constexpr int MIN_GROUND_Y_CONTENT = 95.0F;
     static PlayScene* create(int levelId);
     bool initWithLevelid(int levelId);
 
@@ -30,6 +31,9 @@ public:
 
     void loadLevel(int levelId);
 
+    ObjectChunk* getChunkByCell(int cellX, int cellY);
+    ObjectChunk* getCurrentChunk();
+
 private:
     ax::Vector<ObjectChunk*> chunks;
     Ticker _ticker{60};
@@ -41,4 +45,9 @@ private:
     ax::Node* uiLayer      = nullptr;
 
     ax::EventListenerTouchOneByOne* _listener = nullptr;
+
+    // debug:
+
+    ax::DrawNode* _debugDraw = nullptr;
+    void drawHitboxes();
 };

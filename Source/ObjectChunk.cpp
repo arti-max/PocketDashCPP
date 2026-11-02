@@ -130,3 +130,29 @@ void ObjectChunk::collectObjects(std::vector<GameObject*>& list) const
         }
     }
 }
+
+void ObjectChunk::collectObjectsAround(std::vector<GameObject*>& list, int cellX, int cellY) const
+{
+    if (this->objectCount == 0) return;
+
+    int centerLX = cellX - (this->x * this->width);
+    int centerLY = cellY - (this->y * this->height);
+
+    for (int dy = -1; dy <= 1; ++dy)
+    {
+        int ly = centerLY + dy;
+        if (ly < 0 || ly >= this->height) continue;
+
+        for (int dx = -1; dx <= 1; ++dx)
+        {
+            int lx = centerLX + dx;
+            if (lx < 0 || lx >= this->width) continue;
+
+            int idx = this->getIndexByPos(lx, ly);
+            if (auto* obj = this->objects[idx].get())
+            {
+                list.push_back(obj);
+            }
+        }
+    }
+}

@@ -21,18 +21,31 @@ public:
     void setIsDead(bool f) { isDead = f; }
     bool isOnGround() const { return onGround; }
     bool getIsDead() const { return isDead; }
+    bool isAlive() const { return !isDead; }
     bool isInAir() const { return !onGround; }
-    float getWorldPositionX() const { return this->worldX; };
+    float getWorldPositionX() const { return this->worldX; }
     void setBaseWorldX(float x) { worldX = x; };
+    int getGravityMul() const { return isUpside ? -1 : 1; }
+
+    void collideWithObject(GameObject* obj);
+    void collideWithHazard(GameObject* obj);
+    void collideWithPortal(GameObject* obj);
+    void collideWithPad(GameObject* obj);
+    void collideWithOrb(GameObject* obj);
+
+    int getCellX() const;
+    int getCellY() const;
 
     void snapRotation();
 
     void hitGround();
 
+    ax::Rect getAABB() const override;
+
 private:
-    const float BASE_X_VELOCITY = 381.0F;
-    const float GRAVITY         = -2920.0F;
-    const float JUMP_VELOCITY   = 840.0F;
+    const float BASE_X_VELOCITY = 421.0F;
+    const float GRAVITY         = -3920.0F;
+    const float JUMP_VELOCITY   = 940.0F;
 
     ax::Sprite* skin0 = nullptr;
     ax::Sprite* skin1 = nullptr;
@@ -43,6 +56,8 @@ private:
     float vx = BASE_X_VELOCITY;
 
     float worldX = 0.0F;
+
+    bool isUpside = false;
 
     bool onGround  = false;
     bool isHolding = false;
