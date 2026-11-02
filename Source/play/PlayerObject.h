@@ -50,6 +50,7 @@ private:
     const float BASE_X_VELOCITY = 421.0F;
     const float GRAVITY         = -3920.0F;
     const float JUMP_VELOCITY   = 940.0F;
+    const float MAX_VELOCITY_Y  = 4920.0F;
 
     ax::Sprite* skin0 = nullptr;
     ax::Sprite* skin1 = nullptr;

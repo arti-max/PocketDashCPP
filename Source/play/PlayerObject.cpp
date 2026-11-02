@@ -38,13 +38,15 @@ void PlayerObject::update(float dt)
 {
     if (isInAir())
     {
-        this->vy += GRAVITY * dt;
+        this->vy += (GRAVITY * this->getGravityMul()) * dt;
+        if (this->vy < -MAX_VELOCITY_Y || this->vy > MAX_VELOCITY_Y)
+            this->vy = -(MAX_VELOCITY_Y * this->getGravityMul());
     }
 
     float nx = this->getWorldPositionX() + (this->vx * dt);
-    float ny = this->worldY + ((this->vy * dt) * this->getGravityMul());  // for commit
+    float ny = this->worldY + ((this->vy * dt));
 
-    if (ny <= 0.0F)
+    if (ny <= 0.0F && !this->isUpside)
     {
         ny             = 0.0F;
         this->vy       = 0.0F;
@@ -54,7 +56,7 @@ void PlayerObject::update(float dt)
 
     if (isInAir() && this->getActionByTag(ROTATE_ACTION_TAG) == nullptr)
     {
-        auto rotateAction = ax::RotateBy::create(0.4F, 180.0F);
+        auto rotateAction = ax::RotateBy::create(0.4F, 180.0F * this->getGravityMul());
         rotateAction->setTag(ROTATE_ACTION_TAG);
         this->runAction(rotateAction);
     }
@@ -97,7 +99,7 @@ void PlayerObject::jump()
 {
     if (isInAir()) return;
     this->doJump   = false;
-    this->vy       = JUMP_VELOCITY;
+    this->vy       = JUMP_VELOCITY * this->getGravityMul();
     this->onGround = false;
 }
 
@@ -141,11 +143,12 @@ void PlayerObject::collideWithObject(GameObject* obj)
 
     if (intersectsByX <= 0.0F || intersectsByY <= 0.0F) return;
 
-    bool isFalling    = (this->vy <= 0.0F);
-    bool isAboveBlock = (pAABB.getMinY() >= oAABB.getMaxY() - 14.0F);
+    bool isFalling = (this->vy * this->getGravityMul() <= 0.0F);
+    bool isAboveBlock =
+        this->isUpside ? (pAABB.getMaxY() <= oAABB.getMinX() + 14.0F) : (pAABB.getMinY() >= oAABB.getMaxY() - 14.0F);
     if (isFalling && isAboveBlock && intersectsByX >= 4.0F)
     {
-        this->worldY = oAABB.getMaxY();
+        this->worldY = this->isUpside ? oAABB.getMinY() - (pAABB.size.height) : oAABB.getMaxY();
         this->hitGround();
         return;
     }
@@ -177,4 +180,19 @@ void PlayerObject::collideWithPad(GameObject* obj)
     this->vy       = (JUMP_VELOCITY * 1.2F) * this->getGravityMul();
     this->onGround = false;
 }
-void PlayerObject::collideWithPortal(GameObject* obj) {}
+void PlayerObject::collideWithPortal(GameObject* obj)
+{
+    if (obj->getObjectType() == GameObjectType::PortalY && !this->isUpside)
+    {
+        this->vy *= 0.6F;
+        this->isUpside = true;
+        this->onGround = false;
+    }
+    else if (this->isUpside && obj->getObjectType() == GameObjectType::PortalB)
+    {
+        this->vy *= 0.6F;
+        this->isUpside = false;
+        this->onGround = false;
+    }
+    this->stopActionByTag(ROTATE_ACTION_TAG);
+}
