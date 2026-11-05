@@ -65,6 +65,14 @@ bool ObjectChunk::addObjectToChunk(GameObject* obj)
 
     if (this->playMode)
     {
+        if (obj->getObjectType() == GameObjectType::Pad)
+        {
+            auto ps = ParticleConfigLoader::createFromJson("particleC.json");  // pad particles
+            ps->setPosition(obj->getPosition());
+            ps->setRotation(obj->getRotation());
+            this->particles.pushBack(ps);
+            this->addChild(ps);
+        }
         if (obj->getObjectType() == GameObjectType::ChainLarge1 || obj->getObjectType() == GameObjectType::ChainLarge0)
         {
             obj->setBlendFunc(ax::BlendFunc::ADDITIVE);
@@ -83,7 +91,12 @@ bool ObjectChunk::addObjectToChunk(GameObject* obj)
             portal_bg->setRotation(obj->getRotation());
             this->addChild(portal_bg);
 
-            // auto ps = ParticleConfigLoader::createFromJson("");
+            auto ps = ParticleConfigLoader::createFromJson(type == GameObjectType::PortalY ? "particleF.json"
+                                                                                           : "particleE.json");
+            this->particles.pushBack(ps);
+            ps->setPosition(obj->getPosition());
+            ps->setRotation(obj->getRotation());
+            this->addChild(ps);
         }
         if (obj->getObjectType() == GameObjectType::Orb)
         {
@@ -216,12 +229,21 @@ void ObjectChunk::getOrbNodes(std::vector<GameObject*>& list)
     }
 }
 
-void ObjectChunk::show()
+void ObjectChunk::activate(bool active)
 {
-    this->setVisible(true);
-}
+    if (this->_visible == active) return;
 
-void ObjectChunk::hide()
-{
-    this->setVisible(false);
+    this->setVisible(active);
+
+    for (auto* ps : this->particles)
+    {
+        if (active)
+        {
+            ps->resetSystem();
+        }
+        else
+        {
+            ps->stopSystem();
+        }
+    }
 }

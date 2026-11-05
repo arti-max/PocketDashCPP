@@ -49,8 +49,7 @@ public:
 
     void setPlayMode() { playMode = true; }
 
-    void show();
-    void hide();
+    void activate(bool active);
 
 private:
     const int MAX_CHUNK_SIZE = 256;

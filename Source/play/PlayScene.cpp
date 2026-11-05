@@ -219,9 +219,10 @@ void PlayScene::cullChunks()
         int cx = chunk->getChunkX();
 
         bool isVisible = (cx >= minChunkX && cx <= maxChunkX);
-        isVisible ? chunk->show() : chunk->hide();
+        chunk->activate(isVisible);
     }
 }
+
 void PlayScene::checkCollisions()
 {
     if (this->player->getWorldPositionY() > 0.0F)

@@ -14,6 +14,7 @@ ax::ParticleSystemQuad* ParticleConfigLoader::createFromJson(std::string_view fi
     }
 
     rapidjson::Document doc;
+    doc.Parse(jsonStr.c_str());
 
     if (doc.HasParseError())
     {
@@ -26,24 +27,32 @@ ax::ParticleSystemQuad* ParticleConfigLoader::createFromJson(std::string_view fi
     auto* system = ax::ParticleSystemQuad::createWithTotalParticles(maxParticles);
     if (system == nullptr) return nullptr;
 
+    system->setPositionType(ax::ParticleSystem::PositionType::GROUPED);
+
     if (doc.HasMember("textureFileName"))
     {
         std::string textureName = doc["textureFileName"].GetString();
-
-        auto* frame = ax::SpriteFrameCache::getInstance()->getSpriteFrameByName(textureName);
-        if (frame)
+        auto* texture           = ax::Director::getInstance()->getTextureCache()->addImage(textureName);
+        if (texture)
         {
-            system->setTextureWithRect(frame->getTexture(), frame->getRect());
+            AXLOGD("Texture {} added!", textureName);
+            system->setTexture(texture);
         }
         else
         {
-            auto* texture = ax::Director::getInstance()->getTextureCache()->addImage(textureName);
-            if (texture) system->setTexture(texture);
+            AXLOGE("Particle texture not found {}", textureName);
         }
     }
 
+    float lifespan = doc.HasMember("particleLifespan") ? doc["particleLifespan"].GetFloat() : 1.0F;
+    system->setLife(lifespan);
+
+    if (lifespan > 0.0F)
+    {
+        system->setEmissionRate(static_cast<float>(maxParticles) / lifespan);
+    }
+
     if (doc.HasMember("duration")) system->setDuration(doc["duration"].GetFloat());
-    if (doc.HasMember("particleLifespan")) system->setLife(doc["particleLifespan"].GetFloat());
     if (doc.HasMember("particleLifespanVariance")) system->setLifeVar(doc["particleLifespanVariance"].GetFloat());
 
     if (doc.HasMember("angle")) system->setAngle(doc["angle"].GetFloat());
@@ -68,7 +77,7 @@ ax::ParticleSystemQuad* ParticleConfigLoader::createFromJson(std::string_view fi
         if (doc.HasMember("tangentialAcceleration"))
             system->setTangentialAccel(doc["tangentialAcceleration"].GetFloat());
         if (doc.HasMember("tangentialAccelVariance"))
-            system->setTangentialAccel(doc["tangentialAccelVariance"].GetFloat());
+            system->setTangentialAccelVar(doc["tangentialAccelVariance"].GetFloat());
 
         system->setGravity(ax::Vec2::ZERO);
     }
