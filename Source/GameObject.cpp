@@ -161,3 +161,8 @@ std::string GameObject::getObjectString()
 
     return blockStr;
 }
+
+void GameObject::setVisualLayer(VisualLayer layer)
+{
+    this->setGlobalZOrder(static_cast<float>(layer));
+}

@@ -1,4 +1,6 @@
 #include "ObjectChunk.h"
+#include "VisualLayer.h"
+#include "ParticleConfigLoader.h"
 
 bool ObjectChunk::init()
 {
@@ -61,14 +63,37 @@ bool ObjectChunk::addObjectToChunk(GameObject* obj)
     obj->chunk = this;
     objectCount++;
 
-    if (obj->getObjectType() == GameObjectType::Orb && this->playMode)
+    if (this->playMode)
     {
-        auto ring = ax::Sprite::createWithSpriteFrameName("orb_01_1.png");
-        ring->setScale(GameObject::SPRITE_SCALE);
-        ring->setPosition(obj->getPosition());
-        this->addChild(ring);
-        this->rings.pushBack(ring);
-        obj->ring = ring;
+        if (obj->getObjectType() == GameObjectType::ChainLarge1 || obj->getObjectType() == GameObjectType::ChainLarge0)
+        {
+            obj->setBlendFunc(ax::BlendFunc::ADDITIVE);
+            obj->setColor(ax::Color3B::WHITE);
+            obj->setOpacity(180);
+        }
+
+        if (obj->getObjectType() == GameObjectType::PortalY || obj->getObjectType() == GameObjectType::PortalB)
+        {
+            GameObjectType type = obj->getObjectType();
+            obj->setVisualLayer(VisualLayer::Foreground);
+            auto portal_bg = ax::Sprite::createWithSpriteFrameName(type == GameObjectType::PortalY ? "portal_02_1.png"
+                                                                                                   : "portal_01_1.png");
+            portal_bg->setPosition(obj->getPosition());
+            portal_bg->setScale(GameObject::SPRITE_SCALE);
+            portal_bg->setRotation(obj->getRotation());
+            this->addChild(portal_bg);
+
+            // auto ps = ParticleConfigLoader::createFromJson("");
+        }
+        if (obj->getObjectType() == GameObjectType::Orb)
+        {
+            auto ring = ax::Sprite::createWithSpriteFrameName("orb_01_1.png");
+            ring->setScale(GameObject::SPRITE_SCALE);
+            ring->setPosition(obj->getPosition());
+            this->addChild(ring);
+            this->rings.pushBack(ring);
+            obj->ring = ring;
+        }
     }
     return true;
 }
@@ -189,4 +214,14 @@ void ObjectChunk::getOrbNodes(std::vector<GameObject*>& list)
             list.push_back(obj);
         }
     }
+}
+
+void ObjectChunk::show()
+{
+    this->setVisible(true);
+}
+
+void ObjectChunk::hide()
+{
+    this->setVisible(false);
 }

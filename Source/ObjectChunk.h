@@ -49,6 +49,9 @@ public:
 
     void setPlayMode() { playMode = true; }
 
+    void show();
+    void hide();
+
 private:
     const int MAX_CHUNK_SIZE = 256;
     int objectCount          = 0;
@@ -56,6 +59,7 @@ private:
     bool playMode = false;
 
     std::array<ax::RefPtr<GameObject>, TOTAL_OBJECTS> objects{};
+    ax::Vector<ax::ParticleSystemQuad*> particles;
     ax::Vector<ax::Sprite*> rings;
 
     int maxArraySize = 0;

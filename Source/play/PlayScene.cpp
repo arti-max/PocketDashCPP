@@ -1,7 +1,9 @@
 #include "PlayScene.h"
-
+#include "editor/EditorScene.h"
 #include <algorithm>
 #include "SaveManager.h"
+
+#include "ui/UIButton.h"
 
 PlayScene* PlayScene::create(int levelId)
 {
@@ -56,12 +58,13 @@ bool PlayScene::initWithLevelid(int levelId)
     this->player       = PlayerObject::create(2);
     this->player->setPosition(ax::Vec2(screenSpawnX, MIN_GROUND_Y));
     this->player->setWorldPositionY(0.0F);
-    this->addChild(this->player, 50);
+    this->addChild(this->player);
 
     this->contentLayer = ax::Node::create();
     this->contentLayer->setPosition(screenSpawnX, MIN_GROUND_Y_CONTENT);
     this->player->setBaseWorldX(0.0F);
-    this->addChild(this->contentLayer);
+    this->player->setVisualLayer(VisualLayer::Player);
+    this->addChild(this->contentLayer, -10);
 
     // auto obj = GameObject::createFromType(GameObjectType::Block);
     // obj->setPosition(ax::Vec2::ZERO);
@@ -72,10 +75,21 @@ bool PlayScene::initWithLevelid(int levelId)
     this->_listener->onTouchEnded = AX_CALLBACK_2(PlayScene::onTouchEnded, this);
     _eventDispatcher->addEventListenerWithSceneGraphPriority(this->_listener, this);
 
+    this->uiLayer = ax::Node::create();
+    this->addChild(this->uiLayer, 200);
+
+    auto exitBtn = ax::ui::Button::create("pause_btn.png", "", "", ax::ui::Widget::TextureResType::PLIST);
+    exitBtn->setPosition(ax::Vec2(visibleSize.width - (exitBtn->getContentSize().width + 10),
+                                  visibleSize.height - (exitBtn->getContentSize().height + 10)));
+    exitBtn->setPressedActionEnabled(true);
+    exitBtn->setScale(2.5F);
+    exitBtn->addTouchEventListener(AX_CALLBACK_2(PlayScene::onExitButtonClicked, this));
+    this->uiLayer->addChild(exitBtn, 10);
+
     this->loadLevel(this->levelId);
 
-    this->_debugDraw = ax::DrawNode::create();
-    this->addChild(this->_debugDraw, 999);
+    // this->_debugDraw = ax::DrawNode::create();
+    // this->addChild(this->_debugDraw, 999);
 
     this->scheduleUpdate();
     return true;
@@ -88,7 +102,7 @@ void PlayScene::resetlevel()
     float screenSpawnX = (visibleSize.width / 2) - 160.0F;
     this->contentLayer->setPosition(screenSpawnX, MIN_GROUND_Y_CONTENT);
     this->player->setBaseWorldX(0.0F);
-    this->player->setPositionY(MIN_GROUND_Y);
+    this->player->setWorldPositionY(0.0F);
     this->player->setOnGround(true);
     this->player->setVelocityY(0.0F);
     this->player->setRotation(0.0F);
@@ -205,7 +219,7 @@ void PlayScene::cullChunks()
         int cx = chunk->getChunkX();
 
         bool isVisible = (cx >= minChunkX && cx <= maxChunkX);
-        chunk->setVisible(isVisible);
+        isVisible ? chunk->show() : chunk->hide();
     }
 }
 void PlayScene::checkCollisions()
@@ -234,9 +248,10 @@ void PlayScene::checkCollisions()
         // AXLOGD("Object: {}", obj->getObjectString());
         if (pAABB.intersectsRect(obj->getAABB()))
         {
-            AXLOGD("pAABB: {}, {}, {}, {}", pAABB.getMinX(), pAABB.getMaxX(), pAABB.getMinY(), pAABB.getMaxY());
-            AXLOGD("Collided!!! {}: {}, {}, {}, {}", static_cast<int>(obj->getObjectType()), obj->getAABB().getMinX(),
-                   obj->getAABB().getMaxX(), obj->getAABB().getMinY(), obj->getAABB().getMaxY());
+            // AXLOGD("pAABB: {}, {}, {}, {}", pAABB.getMinX(), pAABB.getMaxX(), pAABB.getMinY(), pAABB.getMaxY());
+            // AXLOGD("Collided!!! {}: {}, {}, {}, {}", static_cast<int>(obj->getObjectType()),
+            // obj->getAABB().getMinX(),
+            //    obj->getAABB().getMaxX(), obj->getAABB().getMinY(), obj->getAABB().getMaxY());
             switch (obj->getObjectType())
             {
             case GameObjectType::Block: this->player->collideWithObject(obj); break;
@@ -380,5 +395,15 @@ void PlayScene::drawHitboxes()
                            box.size.height);
         ax::Color4F color = (obj->getObjectType() == GameObjectType::Spike) ? ax::Color4F::RED : ax::Color4F::BLUE;
         _debugDraw->drawRect(screenBox.origin, screenBox.origin + screenBox.size, color);
+    }
+}
+
+void PlayScene::onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type)
+{
+    if (type == ax::ui::Widget::TouchEventType::ENDED)
+    {
+        auto newScene   = EditorScene::create();
+        auto transition = ax::TransitionFade::create(0.5F, newScene);
+        _director->replaceScene(transition);
     }
 }

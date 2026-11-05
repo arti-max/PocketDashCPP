@@ -4,6 +4,8 @@
 #include "ObjectChunk.h"
 #include "GameObject.h"
 #include "Ticker.h"
+#include "cocos2d.h"
+#include "ui/UIWidget.h"
 
 // что должно быть в PlayScene?
 /*
@@ -33,6 +35,8 @@ public:
 
     void loadLevel(int levelId);
     void resetlevel();
+
+    void onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type);
 
     ObjectChunk* getChunkByCell(int cellX, int cellY);
     ObjectChunk* getCurrentChunk();

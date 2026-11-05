@@ -1,5 +1,6 @@
 #pragma once
 #include "GameObjectType.h"
+#include "VisualLayer.h"
 #include "axmol.h"
 
 // GameObject должен:
@@ -38,6 +39,7 @@ public:
     bool getIsActivated() const { return activated; }
     bool getIsTrigger() const { return isTrigger; }
     GameObjectType getObjectType() const { return type; }
+    void setVisualLayer(VisualLayer layer);
 
     void setChunkId(int id) { chunkId = id; }
 

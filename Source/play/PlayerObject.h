@@ -11,7 +11,7 @@ public:
     PlayerObject()  = default;
     ~PlayerObject() = default;
 
-    void update(float dt);
+    void update(float dt) override;
     void jump();
 
     void pushTouch();
