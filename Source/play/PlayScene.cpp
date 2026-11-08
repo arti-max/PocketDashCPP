@@ -4,6 +4,7 @@
 #include "SaveManager.h"
 
 #include "ui/UIButton.h"
+#include "audio/AudioEngine.h"
 
 PlayScene* PlayScene::create(int levelId)
 {
@@ -15,6 +16,11 @@ PlayScene* PlayScene::create(int levelId)
     }
     delete obj;
     return nullptr;
+}
+
+PlayScene::~PlayScene()
+{
+    if (this->_listener) _eventDispatcher->removeEventListener(this->_listener);
 }
 
 bool PlayScene::initWithLevelid(int levelId)
@@ -90,6 +96,9 @@ bool PlayScene::initWithLevelid(int levelId)
 
     // this->_debugDraw = ax::DrawNode::create();
     // this->addChild(this->_debugDraw, 999);
+    ax::AudioEngine::preload("Ego.mp3");
+    this->musicSourceId = ax::AudioEngine::play2d("Ego.mp3", false, 0.8F);
+    // ax::AudioEngine::pause(this->musicSourceId);
 
     this->scheduleUpdate();
     return true;
@@ -106,7 +115,9 @@ void PlayScene::resetlevel()
     this->player->setOnGround(true);
     this->player->setVelocityY(0.0F);
     this->player->setRotation(0.0F);
+    this->player->showSkin();
     this->player->setIsDead(false);
+    this->musicSourceId = ax::AudioEngine::play2d("Ego.mp3", false, 0.8F);
 }
 
 void PlayScene::updateCamera(float dt)
@@ -172,6 +183,10 @@ void PlayScene::tick(float dt)
     this->updateOrbs();
     if (this->player->getIsDead())
     {
+        if (this->deathTicks == 0)
+        {
+            ax::AudioEngine::stop(this->musicSourceId);
+        }
         this->deathTicks++;
         if (this->deathTicks >= DEATH_TICKS) this->resetlevel();
     }
@@ -403,6 +418,7 @@ void PlayScene::onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventT
 {
     if (type == ax::ui::Widget::TouchEventType::ENDED)
     {
+        ax::AudioEngine::stopAll();
         auto newScene   = EditorScene::create();
         auto transition = ax::TransitionFade::create(0.5F, newScene);
         _director->replaceScene(transition);

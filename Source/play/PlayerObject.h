@@ -1,5 +1,6 @@
 #pragma once
 #include "GameObject.h"
+#include "ParticleConfigLoader.h"
 
 class PlayerObject : public GameObject
 {
@@ -44,6 +45,9 @@ public:
     void hitGround();
     void drop();
 
+    void death();
+    void showSkin();
+
     ax::Rect getAABB() const override;
 
 private:
@@ -51,6 +55,8 @@ private:
     const float GRAVITY         = -3920.0F;
     const float JUMP_VELOCITY   = 940.0F;
     const float MAX_VELOCITY_Y  = 4920.0F;
+
+    ax::ParticleSystemQuad* deathParticles = nullptr;
 
     ax::Sprite* skin0 = nullptr;
     ax::Sprite* skin1 = nullptr;

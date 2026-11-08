@@ -19,8 +19,8 @@ public:
     static PlayScene* create(int levelId);
     bool initWithLevelid(int levelId);
 
-    PlayScene()  = default;
-    ~PlayScene() = default;
+    PlayScene() = default;
+    ~PlayScene();
 
     void update(float dt) override;
     void tick(float dt);
@@ -61,6 +61,8 @@ private:
     float baseGroundY  = 0.0F;
 
     int deathTicks = 0;
+
+    int musicSourceId = -1;
 
     int levelId            = 0;
     PlayerObject* player   = nullptr;

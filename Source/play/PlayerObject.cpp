@@ -1,5 +1,6 @@
 #include "PlayerObject.h"
 #include "PlayScene.h"
+#include "audio/AudioEngine.h"
 #include <fmt/format.h>
 
 PlayerObject* PlayerObject::create(int skinId)
@@ -30,6 +31,16 @@ bool PlayerObject::initWitchSkinId(int skinId)
     this->addChild(this->skin0);
     this->addChild(this->skin1);
     this->setScale(2.5F);
+
+    this->deathParticles = ParticleConfigLoader::createFromJson("particleB.json");
+    this->deathParticles->setScale(1.2F / this->getScale());
+    this->addChild(this->deathParticles);
+
+    this->deathParticles->setStartColor(ax::Color4F(this->color1));
+    this->deathParticles->setEndColor(ax::Color4F(this->color2));
+    this->deathParticles->stopSystem();
+
+    ax::AudioEngine::preload("explode.wav");
 
     return true;
 }
@@ -157,14 +168,14 @@ void PlayerObject::collideWithObject(GameObject* obj)
     {
         if (pAABB.getMaxX() > oAABB.getMinX() + 6.0F && pAABB.getMinX() < oAABB.getMinX() + 14.0F)
         {
-            this->isDead = true;
+            this->death();
         }
     }
 }
 
 void PlayerObject::collideWithHazard(GameObject* obj)
 {
-    this->isDead = true;
+    this->death();
 }
 void PlayerObject::collideWithOrb(GameObject* obj)
 {
@@ -195,4 +206,20 @@ void PlayerObject::collideWithPortal(GameObject* obj)
         this->onGround = false;
     }
     this->stopActionByTag(ROTATE_ACTION_TAG);
+}
+
+void PlayerObject::showSkin()
+{
+    this->skin0->setVisible(true);
+    this->skin1->setVisible(true);
+}
+
+void PlayerObject::death()
+{
+    if (this->getActionByTag(ROTATE_ACTION_TAG) != nullptr) this->stopActionByTag(ROTATE_ACTION_TAG);
+    this->isDead = true;
+    this->skin0->setVisible(false);
+    this->skin1->setVisible(false);
+    this->deathParticles->resetSystem();
+    int soundId = ax::AudioEngine::play2d("explode.wav", false, 1.0F);
 }
