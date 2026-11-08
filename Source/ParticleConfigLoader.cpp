@@ -1,6 +1,24 @@
 #include "ParticleConfigLoader.h"
 #include "rapidjson/document.h"
 
+static ax::backend::BlendFactor glBlendToBackend(uint32_t factor)
+{
+    switch (factor)
+    {
+    case 0: return ax::backend::BlendFactor::ZERO;
+    case 1: return ax::backend::BlendFactor::ONE;
+    case 0x300: return ax::backend::BlendFactor::SRC_COLOR;
+    case 0x301: return ax::backend::BlendFactor::ONE_MINUS_SRC_COLOR;
+    case 0x302: return ax::backend::BlendFactor::SRC_ALPHA;
+    case 0x303: return ax::backend::BlendFactor::ONE_MINUS_SRC_ALPHA;
+    case 0x304: return ax::backend::BlendFactor::DST_ALPHA;
+    case 0x305: return ax::backend::BlendFactor::ONE_MINUS_DST_ALPHA;
+    case 0x306: return ax::backend::BlendFactor::DST_COLOR;
+    case 0x307: return ax::backend::BlendFactor::ONE_MINUS_DST_COLOR;
+    default: return static_cast<ax::backend::BlendFactor>(factor);
+    }
+}
+
 ax::ParticleSystemQuad* ParticleConfigLoader::createFromJson(std::string_view filename)
 {
     auto fileUtils      = ax::FileUtils::getInstance();
@@ -36,6 +54,7 @@ ax::ParticleSystemQuad* ParticleConfigLoader::createFromJson(std::string_view fi
         if (texture)
         {
             AXLOGD("Texture {} added!", textureName);
+            // texture->setPremultipliedAlpha(false);
             system->setTexture(texture);
         }
         else
@@ -98,7 +117,7 @@ ax::ParticleSystemQuad* ParticleConfigLoader::createFromJson(std::string_view fi
     ax::Color4F finishColor(doc.HasMember("finishColorRed") ? doc["finishColorRed"].GetFloat() : 1.0F,
                             doc.HasMember("finishColorGreen") ? doc["finishColorGreen"].GetFloat() : 1.0F,
                             doc.HasMember("finishColorBlue") ? doc["finishColorBlue"].GetFloat() : 1.0F,
-                            doc.HasMember("finishColorAlpha") ? doc["finishColorAlpha"].GetFloat() : 1.0F);
+                            doc.HasMember("finishColorAlpha") ? doc["finishColorAlpha"].GetFloat() : 0.0F);
     system->setEndColor(finishColor);
 
     ax::Color4F startColorVar(
@@ -108,10 +127,17 @@ ax::ParticleSystemQuad* ParticleConfigLoader::createFromJson(std::string_view fi
         doc.HasMember("startColorVarianceAlpha") ? doc["startColorVarianceAlpha"].GetFloat() : 0.0F);
     system->setStartColorVar(startColorVar);
 
+    ax::Color4F finishColorVar(
+        doc.HasMember("finishColorVarianceRed") ? doc["finishColorVarianceRed"].GetFloat() : 0.0F,
+        doc.HasMember("finishColorVarianceGreen") ? doc["finishColorVarianceGreen"].GetFloat() : 0.0F,
+        doc.HasMember("finishColorVarianceBlue") ? doc["finishColorVarianceBlue"].GetFloat() : 0.0F,
+        doc.HasMember("finishColorVarianceAlpha") ? doc["finishColorVarianceAlpha"].GetFloat() : 0.0F);
+    system->setEndColorVar(finishColorVar);
+    // system->setOpacityModifyRGB(false);
+
     unsigned int srcBlend = doc.HasMember("blendFuncSource") ? doc["blendFuncSource"].GetUint() : 770;
     unsigned int dstBlend = doc.HasMember("blendFuncDestination") ? doc["blendFuncDestination"].GetUint() : 771;
-    system->setBlendFunc(ax::BlendFunc{static_cast<ax::backend::BlendFactor>(srcBlend),
-                                       static_cast<ax::backend::BlendFactor>(dstBlend)});
+    system->setBlendFunc(ax::BlendFunc{glBlendToBackend(srcBlend), glBlendToBackend(dstBlend)});
 
     return system;
 }

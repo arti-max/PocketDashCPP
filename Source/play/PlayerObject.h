@@ -47,7 +47,7 @@ public:
     ax::Rect getAABB() const override;
 
 private:
-    const float BASE_X_VELOCITY = 421.0F;
+    const float BASE_X_VELOCITY = 411.0F;
     const float GRAVITY         = -3920.0F;
     const float JUMP_VELOCITY   = 940.0F;
     const float MAX_VELOCITY_Y  = 4920.0F;

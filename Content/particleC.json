@@ -7,10 +7,10 @@
 
     "finishColorGreen":0.91,
     "finishColorBlue":0.58,
-    "finishColorRed":1,
+    "finishColorRed":1.0,
 
-    "startColorAlpha":1,
-    "finishColorAlpha":0,
+    "startColorAlpha":1.0,
+    "finishColorAlpha":0.0,
 
     "emitterType":0,
 
@@ -19,12 +19,10 @@
 
     "sourcePositionVariancex":15,
 
-
-
     "startParticleSize":2,
     "finishParticleSize":1,
     "angleVariance":5,
-    "angle":-90,
+    "angle":90,
     "particleLifespan":0.52,
     "maxParticles":40,
     "duration":-1,

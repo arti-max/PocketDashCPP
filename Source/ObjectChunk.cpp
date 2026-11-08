@@ -69,7 +69,16 @@ bool ObjectChunk::addObjectToChunk(GameObject* obj)
         {
             auto ps = ParticleConfigLoader::createFromJson("particleC.json");  // pad particles
             ps->setPosition(obj->getPosition());
-            ps->setRotation(obj->getRotation());
+            float offset = 14.0F;
+            ax::Vec2 localOffset(0.0F, -offset);
+            float rotDeg           = obj->getRotation();
+            float rotRad           = AX_DEGREES_TO_RADIANS(rotDeg);
+            ax::Vec2 rotatedOffset = localOffset.rotateByAngle(ax::Vec2::ZERO, rotRad);
+
+            ps->setPosition(obj->getPosition() + rotatedOffset);
+            ps->setScale(1.2F);
+            ps->setRotation(rotDeg);
+
             this->particles.pushBack(ps);
             this->addChild(ps);
         }
@@ -96,6 +105,7 @@ bool ObjectChunk::addObjectToChunk(GameObject* obj)
             this->particles.pushBack(ps);
             ps->setPosition(obj->getPosition());
             ps->setRotation(obj->getRotation());
+            ps->setScale(1.2F);
             this->addChild(ps);
         }
         if (obj->getObjectType() == GameObjectType::Orb)

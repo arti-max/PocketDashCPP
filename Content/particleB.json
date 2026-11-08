@@ -19,7 +19,7 @@
     "startParticleSize":4,
     "finishParticleSize":2,
     "angleVariance":180,
-    "angle":-88,
+    "angle":88,
     "particleLifespan":0.4,
     "maxParticles":58,
     "duration":0.28,
