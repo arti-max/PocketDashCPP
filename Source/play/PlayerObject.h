@@ -30,6 +30,7 @@ public:
     void setBaseWorldX(float x) { worldX = x; };
     int getGravityMul() const { return isUpside ? -1 : 1; }
     void setVelocityY(float vel) { vy = vel; }
+    void setGravity(bool f) { this->isUpside = f; }
 
     void collideWithObject(GameObject* obj);
     void collideWithHazard(GameObject* obj);

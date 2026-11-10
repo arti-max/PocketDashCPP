@@ -14,8 +14,9 @@
 class PlayScene : public ax::Scene
 {
 public:
-    static constexpr int MIN_GROUND_Y         = 115.0F;
-    static constexpr int MIN_GROUND_Y_CONTENT = 95.0F;
+    static constexpr int MIN_GROUND_Y           = 115.0F;
+    static constexpr int MIN_GROUND_Y_CONTENT   = 95.0F;
+    static constexpr int BG_CHANGE_COLOR_ACTION = 10;
     static PlayScene* create(int levelId);
     bool initWithLevelid(int levelId);
 
@@ -25,6 +26,7 @@ public:
     void update(float dt) override;
     void tick(float dt);
     void checkCollisions();
+    void checkTriggers();
     void updateCamera(float dt);
     void cullChunks();
 
@@ -36,6 +38,9 @@ public:
     void loadLevel(int levelId);
     void resetlevel();
 
+    void addTrigger(GameObject* obj);
+    void executeTrigger(GameObject* obj);
+
     void onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type);
 
     ObjectChunk* getChunkByCell(int cellX, int cellY);
@@ -44,7 +49,12 @@ public:
 private:
     const int DEATH_TICKS = 60;
     ax::Vector<ObjectChunk*> chunks;
+    std::vector<GameObject*> triggers;
     Ticker _ticker{60};
+
+    size_t nextTriggerId = 0;
+
+    ax::Color3B baseColor;
 
     float orbRingRotation = 0.0F;
 
@@ -69,6 +79,7 @@ private:
     ax::Node* contentLayer = nullptr;
     ax::Node* groundLayer  = nullptr;
     ax::Node* uiLayer      = nullptr;
+    ax::Node* background   = nullptr;
 
     ax::EventListenerTouchOneByOne* _listener = nullptr;
 

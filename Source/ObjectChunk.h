@@ -48,6 +48,7 @@ public:
     void getOrbNodes(std::vector<GameObject*>& list);
 
     void setPlayMode() { playMode = true; }
+    void setScene(ax::Scene* s) { scene = s; }
 
     void activate(bool active);
 
@@ -55,7 +56,8 @@ private:
     const int MAX_CHUNK_SIZE = 256;
     int objectCount          = 0;
 
-    bool playMode = false;
+    bool playMode    = false;
+    ax::Scene* scene = nullptr;
 
     std::array<ax::RefPtr<GameObject>, TOTAL_OBJECTS> objects{};
     ax::Vector<ax::ParticleSystemQuad*> particles;

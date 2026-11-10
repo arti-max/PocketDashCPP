@@ -22,36 +22,90 @@ GameObject* GameObject::createFromObj(std::string_view objString)
 {
     // id,x,y,rot;
 
-    size_t p1 = objString.find(',');
+    size_t p1 = objString.find(',');  // id
     if (p1 == std::string_view::npos) return nullptr;
 
-    size_t p2 = objString.find(',', p1 + 1);
+    size_t p2 = objString.find(',', p1 + 1);  // x
     if (p2 == std::string_view::npos) return nullptr;
 
-    size_t p3 = objString.find(',', p2 + 1);
+    size_t p3 = objString.find(',', p2 + 1);  // y
     if (p3 == std::string_view::npos) return nullptr;
+
+    int typeId = 0;
 
     auto idStr   = objString.substr(0, p1);
     auto posXStr = objString.substr(p1 + 1, p2 - p1 - 1);
     auto posYStr = objString.substr(p2 + 1, p3 - p2 - 1);
-    auto rotStr  = objString.substr(p3 + 1);
-
-    int typeId = 0;
-    int objX   = 0;
-    int objY   = 0;
-    float rot  = 0.0F;
 
     std::from_chars(idStr.data(), idStr.data() + idStr.size(), typeId);
+    GameObjectType type  = static_cast<GameObjectType>(typeId);
+    bool process_trigger = false;
+    std::basic_string_view<char> rotStr;
+    std::basic_string_view<char> fadeStr;
+    std::basic_string_view<char> rStr;
+    std::basic_string_view<char> gStr;
+    std::basic_string_view<char> bStr;
+
+    if (type != GameObjectType::Trigger)
+    {
+        rotStr = objString.substr(p3 + 1);
+    }
+    else
+    {
+        process_trigger = true;
+
+        size_t p4 = objString.find(',', p3 + 1);  // rot
+        if (p4 == std::string_view::npos) return nullptr;
+
+        size_t p5 = objString.find(',', p4 + 1);  // fade
+        if (p5 == std::string_view::npos) return nullptr;
+
+        size_t p6 = objString.find(',', p5 + 1);  // r
+        if (p6 == std::string_view::npos) return nullptr;
+
+        size_t p7 = objString.find(',', p6 + 1);  // g
+        if (p7 == std::string_view::npos) return nullptr;
+
+        rotStr  = objString.substr(p3 + 1, p4 - p3 - 1);
+        fadeStr = objString.substr(p4 + 1, p5 - p4 - 1);
+        rStr    = objString.substr(p5 + 1, p6 - p5 - 1);
+        gStr    = objString.substr(p6 + 1, p7 - p6 - 1);
+        bStr    = objString.substr(p7 + 1);
+    }
+
+    int objX        = 0;
+    int objY        = 0;
+    float rot       = 0.0F;
+    int i_fade      = 0;
+    float _fadeTime = 0.0F;
+    int r           = 0;
+    int g           = 0;
+    int b           = 0;
+
     std::from_chars(posXStr.data(), posXStr.data() + posXStr.size(), objX);
     std::from_chars(posYStr.data(), posYStr.data() + posYStr.size(), objY);
-
     rot = std::stof(std::string(rotStr));
+    if (process_trigger)
+    {
+        std::from_chars(fadeStr.data(), fadeStr.data() + fadeStr.size(), i_fade);
+        std::from_chars(rStr.data(), rStr.data() + rStr.size(), r);
+        std::from_chars(gStr.data(), gStr.data() + gStr.size(), g);
+        std::from_chars(bStr.data(), bStr.data() + bStr.size(), b);
+        _fadeTime = (float)i_fade * 0.1F;  // 5 = 0.5, 10 = 1.0
+    }
 
-    auto* obj = GameObject::createFromType(static_cast<GameObjectType>(typeId));
+    auto* obj = GameObject::createFromType(type);
     if (obj)
     {
         obj->setRotation(rot);
         obj->setPosition(static_cast<float>(objX), static_cast<float>(objY));
+        if (process_trigger)
+        {
+            obj->setFadeTime(_fadeTime);
+            obj->setTriggerR(r);
+            obj->setTriggerG(g);
+            obj->setTriggerB(b);
+        }
     }
     return obj;
 }
@@ -155,7 +209,15 @@ std::string GameObject::getObjectString()
     blockStr += std::to_string(static_cast<int>(std::floor(this->getRotation())));
     if (this->isTrigger)
     {
-        blockStr += "5,0,255,0";  // fadetime,r,g,b (fade time in ms - 0.fadetime 100 = 1, 5 = 0.05, 50 = 0.5)
+        blockStr += ',';
+        blockStr += std::to_string(static_cast<int>(this->fadeTime * 10));
+        blockStr += ',';
+        blockStr += std::to_string(this->c_r);
+        blockStr += ',';
+        blockStr += std::to_string(this->c_g);
+        blockStr += ',';
+        blockStr += std::to_string(this->c_b);
+        // blockStr += ",5,0,255,0";  // fadetime,r,g,b (fade time in ms - 0.fadetime 100 = 1, 5 = 0.05, 50 = 0.5)
     }
     blockStr += ';';
 
@@ -165,4 +227,18 @@ std::string GameObject::getObjectString()
 void GameObject::setVisualLayer(VisualLayer layer)
 {
     this->setGlobalZOrder(static_cast<float>(layer));
+}
+
+float GameObject::getWorldPositionX()
+{
+
+    float worldX = this->getPositionX();
+
+    if (this->chunk)
+    {
+        const auto* objChunk = static_cast<const ObjectChunk*>(this->chunk);
+        worldX += (static_cast<float>(objChunk->getChunkX()) * ObjectChunk::CHUNK_SIZE * ObjectChunk::CELL_SIZE);
+    }
+
+    return worldX;
 }

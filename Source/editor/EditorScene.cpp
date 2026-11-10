@@ -1,6 +1,7 @@
 #include "EditorScene.h"
 #include "SaveManager.h"
 #include "play/PlayScene.h"
+#include "ChangeColorPopup.h"
 
 bool EditorScene::init()
 {
@@ -187,7 +188,23 @@ void EditorScene::editObjectFromCell(int cellX, int cellY)
     auto obj = chunk->getObjectAt(cellX, cellY);
     if (obj != nullptr)
     {
-        if (obj->getIsTrigger()) return;
+        if (obj->getIsTrigger())
+        {
+            ChangeColorPopup* popup;
+            popup = ChangeColorPopup::createWithCallbackFade([obj](float fade, int r, int g, int b) -> void {
+                AXLOGD("fade: {}, rgb: {}, {}, {}", fade, r, g, b);
+                obj->setFadeTime(fade);
+                obj->setTriggerR(r);
+                obj->setTriggerG(g);
+                obj->setTriggerB(b);
+            });
+            popup->setPosition(this->_director->getVisibleSize().width / 2.0F,
+                               this->_director->getVisibleSize().height / 2.0F);
+            popup->setFade(obj->getFadeTime());
+            popup->setChangeColors(obj->getTriggerColor());
+            this->addChild(popup, 100);
+            return;
+        };
         AXLOGD("Rotate Obj!: {}", obj->getRotation());
         obj->setRotation(static_cast<float>(static_cast<int>(obj->getRotation() + 90.0F) % 360));
     }

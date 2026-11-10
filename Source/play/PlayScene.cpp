@@ -20,6 +20,7 @@ PlayScene* PlayScene::create(int levelId)
 
 PlayScene::~PlayScene()
 {
+    ax::AudioEngine::stopAll();
     if (this->_listener) _eventDispatcher->removeEventListener(this->_listener);
 }
 
@@ -47,9 +48,11 @@ bool PlayScene::initWithLevelid(int levelId)
     this->groundLayer = ax::Node::create();
     this->addChild(this->groundLayer, 100);
 
-    auto background = ax::LayerColor::create(ax::Color4B(0, 0, 198, 255), visibleSize.width, visibleSize.height);
-    background->setPosition(ax::Vec2::ZERO);
-    this->addChild(background, -100);
+    this->baseColor = ax::Color3B(0, 0, 198);
+
+    this->background = ax::LayerColor::create(ax::Color4B(this->baseColor, 255), visibleSize.width, visibleSize.height);
+    this->background->setPosition(ax::Vec2::ZERO);
+    this->addChild(this->background, -100);
 
     auto ground = ax::LayerColor::create(ax::Color4B(0, 0, 0, 255), visibleSize.width, 90.0F);
     ground->setPosition(ax::Vec2::ZERO);
@@ -93,6 +96,9 @@ bool PlayScene::initWithLevelid(int levelId)
     this->uiLayer->addChild(exitBtn, 10);
 
     this->loadLevel(this->levelId);
+    std::sort(this->triggers.begin(), this->triggers.end(),
+              [](GameObject* a, GameObject* b) { return a->getWorldPositionX() < b->getWorldPositionX(); });
+    this->nextTriggerId = 0;
 
     // this->_debugDraw = ax::DrawNode::create();
     // this->addChild(this->_debugDraw, 999);
@@ -113,10 +119,14 @@ void PlayScene::resetlevel()
     this->player->setBaseWorldX(0.0F);
     this->player->setWorldPositionY(0.0F);
     this->player->setOnGround(true);
+    this->player->setGravity(false);
     this->player->setVelocityY(0.0F);
     this->player->setRotation(0.0F);
     this->player->showSkin();
     this->player->setIsDead(false);
+    this->nextTriggerId = 0;
+    this->background->stopActionByTag(BG_CHANGE_COLOR_ACTION);
+    this->background->setColor(this->baseColor);
     this->musicSourceId = ax::AudioEngine::play2d("Ego.mp3", false, 0.8F);
 }
 
@@ -194,6 +204,7 @@ void PlayScene::tick(float dt)
     {
         this->player->update(dt);
         this->checkCollisions();
+        this->checkTriggers();
         this->updateCamera(dt);
         this->drawHitboxes();
     }
@@ -244,6 +255,11 @@ void PlayScene::checkCollisions()
     {
         this->player->setOnGround(false);
     }
+    if (this->player->getWorldPositionY() > ObjectChunk::CELL_SIZE * 22.0F && this->player->getGravityMul() == -1)
+    {
+        AXLOGD("WorlD Position {}. limit: {}", this->player->getWorldPositionY(), ObjectChunk::CELL_SIZE * 22.0F);
+        this->player->death();
+    }
 
     auto chunk = this->getCurrentChunk();
     if (chunk == nullptr) return;
@@ -279,6 +295,23 @@ void PlayScene::checkCollisions()
             default: break;
             }
         }
+    }
+}
+
+void PlayScene::checkTriggers()
+{
+    float playerX = this->player->getWorldPositionX();
+    while (this->nextTriggerId < this->triggers.size())
+    {
+        GameObject* obj = this->triggers[this->nextTriggerId];
+
+        if (obj->getWorldPositionX() > playerX)
+        {
+            break;
+        }
+
+        this->executeTrigger(obj);
+        this->nextTriggerId++;
     }
 }
 
@@ -336,6 +369,7 @@ void PlayScene::loadLevel(int levelId)
             {
                 chunk = ObjectChunk::create();
                 chunk->setPlayMode();
+                chunk->setScene(this);
                 AXLOGD("chunk coords: {}, {}", std::floor(cellX / ObjectChunk::CELL_SIZE),
                        std::floor(cellY / ObjectChunk::CHUNK_SIZE));
                 chunk->setChunkCoords(std::floor(cellX / ObjectChunk::CHUNK_SIZE),
@@ -423,4 +457,30 @@ void PlayScene::onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventT
         auto transition = ax::TransitionFade::create(0.5F, newScene);
         _director->replaceScene(transition);
     }
+}
+
+void PlayScene::addTrigger(GameObject* obj)
+{
+    if (!obj) return;
+    this->triggers.push_back(obj);
+}
+
+void PlayScene::executeTrigger(GameObject* obj)
+{
+    float fadeTime = obj->getFadeTime();
+    auto color     = obj->getTriggerColor();
+
+    if (fadeTime <= 0.0F)
+    {
+        this->background->stopActionByTag(BG_CHANGE_COLOR_ACTION);
+        this->background->setColor(color);
+        return;
+    }
+
+    this->background->stopActionByTag(BG_CHANGE_COLOR_ACTION);
+
+    auto tintAction = ax::TintTo::create(fadeTime, color);
+    tintAction->setTag(BG_CHANGE_COLOR_ACTION);
+
+    this->background->runAction(tintAction);
 }

@@ -3,6 +3,8 @@
 #include "audio/AudioEngine.h"
 #include <fmt/format.h>
 
+#define FIXED_DT (1.0F / 60.0F)
+
 PlayerObject* PlayerObject::create(int skinId)
 {
     auto* obj = new (std::nothrow) PlayerObject();
@@ -155,8 +157,9 @@ void PlayerObject::collideWithObject(GameObject* obj)
     if (intersectsByX <= 0.0F || intersectsByY <= 0.0F) return;
 
     bool isFalling = (this->vy * this->getGravityMul() <= 0.0F);
+    float snap     = std::max(14.0F, std::abs(this->vy * FIXED_DT) + 2.0F);
     bool isAboveBlock =
-        this->isUpside ? (pAABB.getMaxY() <= oAABB.getMinX() + 14.0F) : (pAABB.getMinY() >= oAABB.getMaxY() - 14.0F);
+        this->isUpside ? (pAABB.getMaxY() <= oAABB.getMinY() + snap) : (pAABB.getMinY() >= oAABB.getMaxY() - snap);
     if (isFalling && isAboveBlock && intersectsByX >= 4.0F)
     {
         this->worldY = this->isUpside ? oAABB.getMinY() - (pAABB.size.height) : oAABB.getMaxY();
@@ -164,7 +167,7 @@ void PlayerObject::collideWithObject(GameObject* obj)
         return;
     }
 
-    if (intersectsByY > 14.0F)
+    if (intersectsByY > snap)
     {
         if (pAABB.getMaxX() > oAABB.getMinX() + 6.0F && pAABB.getMinX() < oAABB.getMinX() + 14.0F)
         {

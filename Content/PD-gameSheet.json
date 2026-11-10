@@ -91,13 +91,13 @@
    { "name": "player_0_12", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 464, "y": 176, "w": 16, "h": 16 } }] },
    { "name": "player_1_12", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 480, "y": 176, "w": 16, "h": 16 } }] },
    { "name": "pd_logo", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 251, "y": 454, "w": 244, "h": 27 } }] },
-   { "name": "content_panel", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 16, "y": 320, "w": 144, "h": 160 } }] },
+   { "name": "content_panel", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 16, "y": 320, "w": 144, "h": 160 }, "center": {"x": 3, "y": 3, "w": 138, "h": 154 } }] },
    { "name": "pd_logo_old", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 67, "y": 174, "w": 173, "h": 25 } }] },
    { "name": "slider_ico_red", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 112, "w": 16, "h": 16 } }] },
    { "name": "slider_ico_green", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 128, "w": 16, "h": 16 } }] },
    { "name": "slider_ico_blue", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 144, "w": 16, "h": 16 } }] },
    { "name": "slider_line_red_off", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 160, "y": 112, "w": 16, "h": 16 } }] },
-   { "name": "slider_line_freen_off", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 160, "y": 128, "w": 16, "h": 16 } }] },
+   { "name": "slider_line_green_off", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 160, "y": 128, "w": 16, "h": 16 } }] },
    { "name": "slider_line_blue_off", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 160, "y": 144, "w": 16, "h": 16 } }] },
    { "name": "slider_line_red", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 176, "y": 112, "w": 16, "h": 16 } }] },
    { "name": "slider_line_green", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 176, "y": 128, "w": 16, "h": 16 } }] },
@@ -118,7 +118,10 @@
    { "name": "spike_05", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 112, "y": 32, "w": 16, "h": 16 } }] },
    { "name": "select_bounds", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 96, "w": 16, "h": 16 } }] },
    { "name": "chain_large_01", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 16, "w": 16, "h": 16 } }] },
-   { "name": "chain_large_02", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 0, "w": 16, "h": 16 } }] }
+   { "name": "chain_large_02", "color": "#0064ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 0, "w": 16, "h": 16 } }] },
+   { "name": "slider_ico_base", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 192, "y": 112, "w": 16, "h": 16 } }] },
+   { "name": "slider_line_base_off", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 208, "y": 112, "w": 16, "h": 16 } }] },
+   { "name": "slider_line_base", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 224, "y": 112, "w": 16, "h": 16 } }] }
   ]
  }
 }

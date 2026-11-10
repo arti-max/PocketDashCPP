@@ -45,6 +45,16 @@ public:
 
     std::string getObjectString();
 
+    void setFadeTime(float fade) { fadeTime = fade; }
+    void setTriggerR(int r) { c_r = r; }
+    void setTriggerG(int g) { c_g = g; }
+    void setTriggerB(int b) { c_b = b; }
+
+    float getFadeTime() const { return fadeTime; }
+    ax::Color3B getTriggerColor() const { return ax::Color3B(c_r, c_g, c_b); }
+
+    float getWorldPositionX();
+
     ax::Node* chunk  = nullptr;
     ax::Sprite* ring = nullptr;
 
@@ -55,6 +65,11 @@ private:
     bool canChangeColor = false;
     bool activated      = false;
     bool isTrigger      = false;
+
+    float fadeTime = 0.5F;
+    int c_r        = 0;
+    int c_b        = 0;
+    int c_g        = 0;
 
     int chunkId = 0;
 };

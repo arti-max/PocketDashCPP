@@ -1,6 +1,6 @@
 #include "ObjectChunk.h"
 #include "VisualLayer.h"
-#include "ParticleConfigLoader.h"
+#include "play/PlayScene.h"
 
 bool ObjectChunk::init()
 {
@@ -116,6 +116,11 @@ bool ObjectChunk::addObjectToChunk(GameObject* obj)
             this->addChild(ring);
             this->rings.pushBack(ring);
             obj->ring = ring;
+        }
+        if (obj->getObjectType() == GameObjectType::Trigger)
+        {
+            ((PlayScene*)scene)->addTrigger(obj);
+            obj->setVisible(false);
         }
     }
     return true;
