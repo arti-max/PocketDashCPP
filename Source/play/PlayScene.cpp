@@ -6,6 +6,8 @@
 #include "ui/UIButton.h"
 #include "audio/AudioEngine.h"
 
+#include "SongData.h"
+
 PlayScene* PlayScene::create(int levelId)
 {
     auto* obj = new (std::nothrow) PlayScene();
@@ -48,7 +50,7 @@ bool PlayScene::initWithLevelid(int levelId)
     this->groundLayer = ax::Node::create();
     this->addChild(this->groundLayer, 100);
 
-    this->baseColor = ax::Color3B(0, 0, 198);
+    this->baseColor = SaveManager::getLocalLevelBGColor(levelId);
 
     this->background = ax::LayerColor::create(ax::Color4B(this->baseColor, 255), visibleSize.width, visibleSize.height);
     this->background->setPosition(ax::Vec2::ZERO);
@@ -100,10 +102,11 @@ bool PlayScene::initWithLevelid(int levelId)
               [](GameObject* a, GameObject* b) { return a->getWorldPositionX() < b->getWorldPositionX(); });
     this->nextTriggerId = 0;
 
+    this->songId = SaveManager::getLocalLevelSongId(this->levelId);
     // this->_debugDraw = ax::DrawNode::create();
     // this->addChild(this->_debugDraw, 999);
-    ax::AudioEngine::preload("Ego.mp3");
-    this->musicSourceId = ax::AudioEngine::play2d("Ego.mp3", false, 0.8F);
+    ax::AudioEngine::preload(getSongFileNameByID(this->songId));
+    this->musicSourceId = ax::AudioEngine::play2d(getSongFileNameByID(this->songId), false, 0.8F);
     // ax::AudioEngine::pause(this->musicSourceId);
 
     this->scheduleUpdate();
@@ -127,7 +130,7 @@ void PlayScene::resetlevel()
     this->nextTriggerId = 0;
     this->background->stopActionByTag(BG_CHANGE_COLOR_ACTION);
     this->background->setColor(this->baseColor);
-    this->musicSourceId = ax::AudioEngine::play2d("Ego.mp3", false, 0.8F);
+    this->musicSourceId = ax::AudioEngine::play2d(getSongFileNameByID(this->songId), false, 0.8F);
 }
 
 void PlayScene::updateCamera(float dt)

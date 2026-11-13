@@ -19,13 +19,25 @@ public:
     SaveManager(const SaveManager&)            = delete;
     SaveManager& operator=(const SaveManager&) = delete;
 
+    // local levels:
     static bool saveLocalLevel(std::string_view levelString, int levelId);
     static std::string loadLocalLevel(int levelId);
     static int initLocalLevel(std::string_view levelName);
 
-    static std::vector<LevelMeta> getLocalLevels();
-    static bool deleteLevel(int levelId);
+    static void setLocalLevelSongId(int levelId, int songId);
+    static int getLocalLevelSongId(int levelId);
 
+    static void setLocalLevelBGColor(int levelId, const ax::Color3B& color);
+    static ax::Color3B getLocalLevelBGColor(int levelId);
+
+    static std::vector<LevelMeta> getLocalLevels();
+    static bool deleteLocalLevel(int levelId);
+
+    // online levels:
+
+    // TODO: online levels managment
+
+    // stats & other:
     static void initSaveFile();
 
     static bool setUserName(std::string_view username);

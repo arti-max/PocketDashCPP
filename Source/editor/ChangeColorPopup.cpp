@@ -4,6 +4,7 @@
 #include "ui/UISlider.h"
 #include "ui/UIButton.h"
 #include "fmt/format.h"
+#include "FontHelper.h"
 
 ChangeColorPopup* ChangeColorPopup::createWithCallback(const TriggerCallback& callback)
 {
@@ -61,7 +62,8 @@ bool ChangeColorPopup::init()
     this->createSliders();
 
     this->dataText = fmt::format("r: {}, g: {}, b: {}", this->c_r, this->c_g, this->c_b);
-    this->label    = ax::Label::createWithTTF(this->dataText, "fonts/JUA.ttf", 24.0F);
+    this->label    = ax::Label::createWithTTF(this->dataText, "fonts/JUA.ttf", getFontScaleWithSample(24.0F));
+    this->label->setScale(FONT_DIV_SAMPLE);
     this->label->setPosition(std::round(this->panel->getContentSize().width / 2.0F), std::round(330.0F));
 
     auto ok = ax::ui::Button::create("medium_btn.png", "", "", ax::ui::Widget::TextureResType::PLIST);
@@ -149,7 +151,9 @@ void ChangeColorPopup::createSliders()
         fadeSlider->setScale(4.0F);
         fadeSlider->setContentSize(ax::Size(60.0F, 16.0F));
 
-        auto sliderLabel = ax::Label::createWithTTF(fmt::format("fade: {:.1f}s", this->fade), "fonts/JUA.ttf", 24.0F);
+        auto sliderLabel = ax::Label::createWithTTF(fmt::format("fade: {:.1f}s", this->fade), "fonts/JUA.ttf",
+                                                    getFontScaleWithSample(24.0F));
+        sliderLabel->setScale(FONT_DIV_SAMPLE);
         sliderLabel->setPosition(this->panel->getContentSize().width / 2.0F, 110.0F);
 
         fadeSlider->addEventListener([this, sliderLabel](ax::Ref* sender, ax::ui::Slider::EventType type) {

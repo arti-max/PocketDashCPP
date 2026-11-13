@@ -29,6 +29,7 @@ public:
     void onTouchEnded(ax::Touch* touch, ax::Event* event);
 
     void onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type);
+    void onSettingsButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type);
 
     void loadLevelFromSave(int levelId);
     bool saveLevelToSave(int levelId);
@@ -45,6 +46,12 @@ private:
     BlockSelectLayer* selectLayer = nullptr;
 
     bool isDragging = false;
+
+    bool settingsOpened = false;
+    bool triggerOpened  = false;
+
+    int selectedSongId        = 0;
+    ax::Color3B selectedColor = ax::Color3B::BLUE;
 
     ax::EventListenerTouchOneByOne* _listener = nullptr;
 };

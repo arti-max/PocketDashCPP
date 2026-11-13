@@ -149,3 +149,207 @@ std::string SaveManager::loadLocalLevel(int levelId)
     }
     return "";
 }
+
+void SaveManager::setLocalLevelSongId(int levelId, int songId)
+{
+    auto utils           = ax::FileUtils::getInstance();
+    std::string filePath = utils->getWritablePath() + SaveManager::SAVE_FILE_NAME;
+
+    if (!utils->isFileExist(filePath))
+    {
+        initSaveFile();
+        return;
+    }
+
+    std::string content = utils->getStringFromFile(filePath);
+
+    rapidjson::Document doc;
+    doc.Parse(content.c_str());
+
+    if (doc.HasParseError() || !doc.IsObject())
+    {
+        AXLOGE("Error save file parse!");
+        return;
+    }
+
+    auto& allocator = doc.GetAllocator();
+    bool changed    = false;
+
+    if (doc.HasMember("local") && doc["local"].IsArray())
+    {
+        auto& localLevels = doc["local"];
+
+        for (auto& item : localLevels.GetArray())
+        {
+            if (item.HasMember("id") && item["id"].IsInt() && item["id"].GetInt() == levelId)
+            {
+                if (item.HasMember("song"))
+                {
+                    item["song"].SetInt(songId);
+                }
+                else
+                {
+                    item.AddMember("song", songId, allocator);
+                }
+                changed = true;
+                break;
+            }
+        }
+    }
+
+    if (changed)
+    {
+        rapidjson::StringBuffer sb;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+        doc.Accept(writer);
+
+        utils->writeStringToFile(sb.GetString(), filePath);
+    }
+}
+
+int SaveManager::getLocalLevelSongId(int levelId)
+{
+    auto utils           = ax::FileUtils::getInstance();
+    std::string filePath = utils->getWritablePath() + SaveManager::SAVE_FILE_NAME;
+
+    if (!utils->isFileExist(filePath))
+    {
+        initSaveFile();
+        return 1;
+    }
+
+    std::string content = utils->getStringFromFile(filePath);
+
+    rapidjson::Document doc;
+    doc.Parse(content.c_str());
+
+    if (doc.HasParseError() || !doc.IsObject())
+    {
+        AXLOGE("Error save file parse!");
+        return 1;
+    }
+
+    if (doc.HasMember("local") && doc["local"].IsArray())
+    {
+        auto& localLevels = doc["local"];
+
+        for (auto& item : localLevels.GetArray())
+        {
+            if (item.HasMember("id") && item["id"].IsInt() && item["id"].GetInt() == levelId)
+            {
+                if (item.HasMember("song"))
+                {
+                    return item["song"].GetInt();
+                }
+            }
+        }
+    }
+
+    return 1;
+}
+
+void SaveManager::setLocalLevelBGColor(int levelId, const ax::Color3B& color)
+{
+    auto utils           = ax::FileUtils::getInstance();
+    std::string filePath = utils->getWritablePath() + SaveManager::SAVE_FILE_NAME;
+
+    if (!utils->isFileExist(filePath))
+    {
+        initSaveFile();
+        return;
+    }
+
+    std::string content = utils->getStringFromFile(filePath);
+
+    rapidjson::Document doc;
+    doc.Parse(content.c_str());
+
+    if (doc.HasParseError() || !doc.IsObject())
+    {
+        AXLOGE("Error save file parse!");
+        return;
+    }
+
+    auto& allocator = doc.GetAllocator();
+    bool changed    = false;
+
+    if (doc.HasMember("local") && doc["local"].IsArray())
+    {
+        auto& localLevels = doc["local"];
+
+        for (auto& item : localLevels.GetArray())
+        {
+            if (item.HasMember("id") && item["id"].IsInt() && item["id"].GetInt() == levelId)
+            {
+                if (item.HasMember("color") && item["color"].IsArray())
+                {
+                    auto& colors = item["color"];
+                    colors.Clear();
+
+                    colors.PushBack(color.r, allocator);
+                    colors.PushBack(color.g, allocator);
+                    colors.PushBack(color.b, allocator);
+
+                    changed = true;
+                }
+                break;
+            }
+        }
+    }
+
+    if (changed)
+    {
+        rapidjson::StringBuffer sb;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+        doc.Accept(writer);
+
+        utils->writeStringToFile(sb.GetString(), filePath);
+    }
+}
+
+ax::Color3B SaveManager::getLocalLevelBGColor(int levelId)
+{
+    auto utils           = ax::FileUtils::getInstance();
+    std::string filePath = utils->getWritablePath() + SaveManager::SAVE_FILE_NAME;
+
+    if (!utils->isFileExist(filePath))
+    {
+        initSaveFile();
+        return ax::Color3B::BLUE;
+    }
+
+    std::string content = utils->getStringFromFile(filePath);
+
+    rapidjson::Document doc;
+    doc.Parse(content.c_str());
+
+    if (doc.HasParseError() || !doc.IsObject())
+    {
+        AXLOGE("Error save file parse!");
+        return ax::Color3B::BLUE;
+    }
+
+    if (doc.HasMember("local") && doc["local"].IsArray())
+    {
+        auto& localLevels = doc["local"];
+
+        for (auto& item : localLevels.GetArray())
+        {
+            if (item.HasMember("id") && item["id"].IsInt() && item["id"].GetInt() == levelId)
+            {
+                if (item.HasMember("color") && item["color"].IsArray())
+                {
+                    auto& colors = item["color"];
+
+                    if (colors.Size() >= 3)
+                    {
+                        return ax::Color3B(colors[0].GetInt(), colors[1].GetInt(), colors[2].GetInt());
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    return ax::Color3B::BLUE;
+}

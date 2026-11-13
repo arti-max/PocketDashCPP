@@ -75,6 +75,7 @@ private:
     int musicSourceId = -1;
 
     int levelId            = 0;
+    int songId             = -1;
     PlayerObject* player   = nullptr;
     ax::Node* contentLayer = nullptr;
     ax::Node* groundLayer  = nullptr;

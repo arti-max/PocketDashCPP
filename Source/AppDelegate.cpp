@@ -81,7 +81,7 @@ bool AppDelegate::applicationDidFinishLaunching()
 
     // Set the design resolution
     renderView->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height,
-                                        ResolutionPolicy::SHOW_ALL);
+                                        ResolutionPolicy::FIXED_HEIGHT);
 
 #if !_AX_TESTS
 

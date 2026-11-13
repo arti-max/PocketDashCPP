@@ -12,6 +12,7 @@
 #include "SaveManager.h"
 #include "play/PlayScene.h"
 #include "ChangeColorPopup.h"
+#include "LevelSettingsLayer.h"
 
 bool EditorScene::init()
 {
@@ -51,6 +52,15 @@ bool EditorScene::init()
     exitBtn->setScale(2.5F);
     exitBtn->addTouchEventListener(AX_CALLBACK_2(EditorScene::onExitButtonClicked, this));
     this->addChild(exitBtn, 10);
+
+    auto settingsBtn = ax::ui::Button::create("more_btn.png", "", "", ax::ui::Widget::TextureResType::PLIST);
+    settingsBtn->setPosition(ax::Vec2(
+        visibleSize.width - (settingsBtn->getContentSize().width + 10) - (exitBtn->getContentSize().width + 10) - 20,
+        visibleSize.height - (settingsBtn->getContentSize().height + 10)));
+    settingsBtn->setPressedActionEnabled(true);
+    settingsBtn->setScale(2.5F);
+    settingsBtn->addTouchEventListener(AX_CALLBACK_2(EditorScene::onSettingsButtonClicked, this));
+    this->addChild(settingsBtn, 10);
 
     // загрузка сохранённого уровня
     this->loadLevelFromSave(0);
@@ -200,19 +210,22 @@ void EditorScene::editObjectFromCell(int cellX, int cellY)
     {
         if (obj->getIsTrigger())
         {
+            if (triggerOpened) return;
             ChangeColorPopup* popup;
-            popup = ChangeColorPopup::createWithCallbackFade([obj](float fade, int r, int g, int b) -> void {
+            popup = ChangeColorPopup::createWithCallbackFade([obj, this](float fade, int r, int g, int b) -> void {
                 AXLOGD("fade: {}, rgb: {}, {}, {}", fade, r, g, b);
                 obj->setFadeTime(fade);
                 obj->setTriggerR(r);
                 obj->setTriggerG(g);
                 obj->setTriggerB(b);
+                this->triggerOpened = false;
             });
             popup->setPosition(this->_director->getVisibleSize().width / 2.0F,
                                this->_director->getVisibleSize().height / 2.0F);
             popup->setFade(obj->getFadeTime());
             popup->setChangeColors(obj->getTriggerColor());
             this->addChild(popup, 100);
+            triggerOpened = true;
             return;
         };
         AXLOGD("Rotate Obj!: {}", obj->getRotation());
@@ -302,6 +315,9 @@ void EditorScene::loadLevelFromSave(int levelId)
             chunk->addObjectToChunk(obj);
         }
     }
+
+    this->selectedColor  = SaveManager::getLocalLevelBGColor(levelId);
+    this->selectedSongId = SaveManager::getLocalLevelSongId(levelId);
 }
 
 bool EditorScene::saveLevelToSave(int levelId)
@@ -322,7 +338,12 @@ bool EditorScene::saveLevelToSave(int levelId)
         }
     }
 
-    return SaveManager::saveLocalLevel(dataString, levelId);
+    bool saved = SaveManager::saveLocalLevel(dataString, levelId);
+    if (!saved) return false;
+    SaveManager::setLocalLevelSongId(levelId, this->selectedSongId);
+    SaveManager::setLocalLevelBGColor(levelId, this->selectedColor);
+
+    return saved;
 }
 
 void EditorScene::onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type)
@@ -334,5 +355,24 @@ void EditorScene::onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEven
         auto newScene   = PlayScene::create(0);
         auto transition = ax::TransitionFade::create(0.5F, newScene, ax::Color3B::BLACK);
         _director->replaceScene(transition);
+    }
+}
+
+void EditorScene::onSettingsButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type)
+{
+    if (type == ax::ui::Widget::TouchEventType::ENDED && !this->settingsOpened)
+    {
+        auto settingsLayer = LevelSettingsLayer::create();
+        settingsLayer->setPosition(
+            ax::Vec2(this->_director->getVisibleSize().width * 0.5f, this->_director->getVisibleSize().height * 0.5f));
+        settingsLayer->setCallback([this](int songId, const ax::Color3B& color) -> void {
+            this->settingsOpened = false;
+            this->selectedSongId = songId;
+            this->selectedColor  = color;
+        });
+        settingsLayer->setSelectedSong(this->selectedSongId);
+        settingsLayer->setBackgroundColor(this->selectedColor);
+        this->addChild(settingsLayer, 500);
+        this->settingsOpened = true;
     }
 }
