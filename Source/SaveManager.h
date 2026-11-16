@@ -13,7 +13,7 @@
 class SaveManager
 {
 public:
-    static constexpr std::string SAVE_FILE_NAME = "AXGameData.dat";
+    inline static const std::string SAVE_FILE_NAME = "AXGameData.dat";
 
     SaveManager()                              = delete;
     ~SaveManager()                             = delete;
