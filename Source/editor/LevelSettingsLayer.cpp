@@ -28,8 +28,8 @@ bool LevelSettingsLayer::init()
         if (type == ax::ui::Widget::TouchEventType::ENDED)
         {
             auto btn = static_cast<ax::ui::Button*>(sender);
-            this->removeFromParent();
             if (this->callback) this->callback(this->selectedSongId, ax::Color3B(this->b_r, this->b_g, this->b_b));
+            this->removeFromParent();
         }
     });
     auto oklabel = ax::Label::createWithTTF("OK", "fonts/JUA.ttf", getFontScaleWithSample(30.0F));

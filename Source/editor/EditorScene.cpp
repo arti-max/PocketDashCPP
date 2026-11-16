@@ -29,8 +29,8 @@ bool EditorScene::init(int levelId)
     auto visibleSize = _director->getVisibleSize();
     auto origin      = _director->getVisibleOrigin();
     auto safeArea    = _director->getSafeAreaRect();
-    float right = safeArea.origin.x = safeArea.size.width;
-    float top                       = safeArea.origin.y + safeArea.size.height;
+    float right      = safeArea.origin.x + safeArea.size.width;
+    float top        = safeArea.origin.y + safeArea.size.height;
 
     // contentNode - нода, содержащая в себе блоки и сетку (перемещаемая часть редактора)
     this->contentNode = ax::Node::create();
@@ -167,7 +167,7 @@ void EditorScene::handleCellClick(const ax::Vec2& pos)
     {
     case BuildMode::BUILD: this->addObjectToCell(cellX, cellY); break;
     case BuildMode::DELETE: this->removeObjectFromCell(cellX, cellY); break;
-    case BuildMode::EDIT: this->editObjectFromCell(cellX, cellY);
+    case BuildMode::EDIT: this->editObjectFromCell(cellX, cellY); break;
     default: break;
     }
 }

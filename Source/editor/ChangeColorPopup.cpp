@@ -131,7 +131,7 @@ void ChangeColorPopup::createSliders()
     bSlider->loadSlidBallTextures("slider_ico_blue.png", "slider_ico_blue.png", "",
                                   ax::ui::Widget::TextureResType::PLIST);
 
-    bSlider->setPercent((this->c_g * 100 / 255));
+    bSlider->setPercent((this->c_b * 100 / 255));
     bSlider->setPosition(ax::Vec2(this->panel->getContentSize().width / 2.0F, 140.0F));
     bSlider->setScale(4.0F);
     bSlider->setContentSize(ax::Size(60.0F, 16.0F));

@@ -393,7 +393,7 @@ jobs:
       - name: Package Linux Binary & Assets
         shell: bash
         run: |
-          tar -czf PocketDash-Linux-x64.tar.gz -C build/bin/PocketDash .
+          tar -czhf PocketDash-Linux-x64.tar.gz -C build/bin/PocketDash .
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
