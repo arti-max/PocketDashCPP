@@ -408,7 +408,7 @@ jobs:
   publish_release:
     name: Publish GitHub Release
     needs: [windows, macos, ios, android, linux]
-    if: env.IS_RELEASE == 'true'
+    if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.build_mode == 'release'
     runs-on: ubuntu-latest
     permissions:
       contents: write

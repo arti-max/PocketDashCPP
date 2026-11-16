@@ -152,7 +152,7 @@ void LevelSelectScene::playLevel(int levelId)
 }
 void LevelSelectScene::deleteLevel(int levelId)
 {
-    auto alert = AlertPopup::create("WRANING!", "Do you want to delete this level?", [this, levelId]() {
+    auto alert = AlertPopup::create("WARNING!", "Do you want to delete this level?", [this, levelId]() {
         bool deleted = SaveManager::deleteLocalLevel(levelId);
         if (deleted)
         {
