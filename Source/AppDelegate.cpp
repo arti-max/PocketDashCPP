@@ -67,33 +67,42 @@ bool AppDelegate::applicationDidFinishLaunching()
     if (!renderView)
     {
 #if (AX_TARGET_PLATFORM != AX_PLATFORM_ANDROID) && (AX_TARGET_PLATFORM != AX_PLATFORM_IOS)
-        renderView = RenderViewImpl::createWithRect("PocketDash", ax::Rect(0, 0, windowSize.width, windowSize.height));
+        renderView = RenderViewImpl::createWithRect("PocketDash", ax::Rect(0, 0, windowSize.width, windowSize.height),
+                                                    1.0F, true);
 #else
         renderView = RenderViewImpl::create("PocketDash");
 #endif
         director->setRenderView(renderView);
     }
 
-    auto frameSize = renderView->getFrameSize();
-    float aspect   = frameSize.width / frameSize.height;
+    // Set the design resolution
+    auto updateDesignRes = [renderView]() {
+        auto frameSize = renderView->getFrameSize();
+        if (frameSize.width <= 0 || frameSize.height <= 0) return;
+
+        float aspect = frameSize.width / frameSize.height;
+        if (aspect < (16.0F / 9.0F))
+        {
+            renderView->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height,
+                                                ResolutionPolicy::FIXED_WIDTH);
+        }
+        else
+        {
+            renderView->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height,
+                                                ResolutionPolicy::FIXED_HEIGHT);
+        }
+    };
+    updateDesignRes();
+#if (AX_TARGET_PLATFORM != AX_PLATFORM_ANDROID) && (AX_TARGET_PLATFORM != AX_PLATFORM_IOS)
+    director->getEventDispatcher()->addCustomEventListener(RenderViewImpl::EVENT_WINDOW_RESIZED,
+                                                           [updateDesignRes](ax::EventCustom*) { updateDesignRes(); });
+#endif
 
     // turn on display FPS
     director->setStatsDisplay(false);
 
     // set FPS. the default value is 1.0/60 if you don't call this
     director->setAnimationInterval(1.0F / 60);
-
-    // Set the design resolution
-    if (aspect < (16.0F / 9.0F))
-    {
-        renderView->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height,
-                                            ResolutionPolicy::FIXED_WIDTH);
-    }
-    else
-    {
-        renderView->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height,
-                                            ResolutionPolicy::FIXED_HEIGHT);
-    }
 
 #if !_AX_TESTS
 
