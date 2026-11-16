@@ -1,6 +1,7 @@
 #pragma once
 #include "axmol.h"
 #include "LevelMeta.h"
+#include "rapidjson/document.h"
 
 // Что должен делать SaveManager?
 /*
@@ -45,4 +46,10 @@ public:
 
     static bool setPlayerSkin(int skinId);
     static int getPlayerSkin();
+
+private:
+    static std::string getSaveFilePath();
+    static bool loadDocument(rapidjson::Document& doc);
+    static bool saveDocument(const rapidjson::Document& doc);
+    static rapidjson::Value* findLocalLevel(rapidjson::Document& doc, int levelId);
 };

@@ -1,7 +1,69 @@
 #include "SaveManager.h"
+#include "SongData.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+
+rapidjson::Value makeJsonString(std::string_view str, rapidjson::Document::AllocatorType& allocator)
+{
+    rapidjson::Value val;
+    val.SetString(str.data(), static_cast<rapidjson::SizeType>(str.size()), allocator);
+    return val;
+}
+
+std::string SaveManager::getSaveFilePath()
+{
+    return ax::FileUtils::getInstance()->getWritablePath() + SaveManager::SAVE_FILE_NAME;
+}
+
+bool SaveManager::loadDocument(rapidjson::Document& doc)
+{
+    auto utils           = ax::FileUtils::getInstance();
+    std::string filePath = getSaveFilePath();
+
+    if (!utils->isFileExist(filePath))
+    {
+        initSaveFile();
+    }
+
+    std::string content = utils->getStringFromFile(filePath);
+    doc.Parse(content.c_str());
+
+    if (doc.HasParseError() || !doc.IsObject())
+    {
+        AXLOGE("Error save file parse!");
+        return false;
+    }
+
+    return true;
+}
+
+bool SaveManager::saveDocument(const rapidjson::Document& doc)
+{
+    rapidjson::StringBuffer sb;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
+    doc.Accept(writer);
+
+    return ax::FileUtils::getInstance()->writeStringToFile(sb.GetString(), getSaveFilePath());
+}
+
+rapidjson::Value* SaveManager::findLocalLevel(rapidjson::Document& doc, int levelId)
+{
+    if (!doc.HasMember("local") || !doc["local"].IsArray())
+    {
+        return nullptr;
+    }
+
+    for (auto& item : doc["local"].GetArray())
+    {
+        if (item.HasMember("id") && item["id"].IsInt() && item["id"].GetInt() == levelId)
+        {
+            return &item;
+        }
+    }
+
+    return nullptr;
+}
 
 void SaveManager::initSaveFile()
 {
@@ -45,311 +107,121 @@ void SaveManager::initSaveFile()
 
 bool SaveManager::saveLocalLevel(std::string_view levelString, int levelId)
 {
-    auto utils           = ax::FileUtils::getInstance();
-    std::string filePath = utils->getWritablePath() + SaveManager::SAVE_FILE_NAME;
-
-    if (!utils->isFileExist(filePath))
-    {
-        initSaveFile();
-    }
-
-    std::string content = utils->getStringFromFile(filePath);
-
     rapidjson::Document doc;
-    doc.Parse(content.c_str());
-
-    if (doc.HasParseError() || !doc.IsObject())
-    {
-        AXLOGE("Error save file parse!");
-        return false;
-    }
+    if (!loadDocument(doc)) return false;
 
     auto& allocator = doc.GetAllocator();
 
-    if (doc.HasMember("local") && doc["local"].IsArray())
+    if (auto* level = findLocalLevel(doc, levelId))
     {
-        auto& localLevels = doc["local"];
-        bool found        = false;
+        (*level)["data"] = makeJsonString(levelString, allocator);
+    }
+    else if (doc.HasMember("local") && doc["local"].IsArray())
+    {
+        rapidjson::Value newLevel(rapidjson::kObjectType);
 
-        for (auto& item : localLevels.GetArray())
-        {
-            if (item.HasMember("id") && item["id"].GetInt() == levelId)
-            {
-                item["data"].SetString(levelString.data(), static_cast<rapidjson::SizeType>(levelString.size()),
-                                       allocator);
-                found = true;
-                break;
-            }
-        }
+        newLevel.AddMember("id", levelId, allocator);
+        newLevel.AddMember("oid", -1, allocator);
+        newLevel.AddMember("song", (int)SONG::EGO, allocator);  // Ego
+        newLevel.AddMember("name", makeJsonString(fmt::format("level {}", levelId), allocator), allocator);
+        newLevel.AddMember("data", makeJsonString(levelString, allocator), allocator);
 
-        if (!found)
-        {
-            rapidjson::Value newLevel(rapidjson::kObjectType);
+        // 0,0,255 (rbg) - Blue
+        rapidjson::Value color(rapidjson::kArrayType);
+        color.PushBack(0, allocator);
+        color.PushBack(0, allocator);
+        color.PushBack(255, allocator);
+        newLevel.AddMember("color", color, allocator);
 
-            newLevel.AddMember("id", levelId, allocator);
-            newLevel.AddMember("song", 1, allocator);  // Ego
-            rapidjson::Value levelDataVal;
-            levelDataVal.SetString(levelString.data(), static_cast<rapidjson::SizeType>(levelString.size()), allocator);
-            newLevel.AddMember("data", levelDataVal, allocator);
-
-            // 0,0,255 (rbg) - Blue
-            rapidjson::Value color(rapidjson::kArrayType);
-            color.PushBack(0, allocator);
-            color.PushBack(0, allocator);
-            color.PushBack(255, allocator);
-
-            newLevel.AddMember("color", color, allocator);
-
-            localLevels.PushBack(newLevel, allocator);
-        }
+        doc["local"].PushBack(newLevel, allocator);
     }
 
-    rapidjson::StringBuffer sb;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-    doc.Accept(writer);
-
-    return utils->writeStringToFile(sb.GetString(), filePath);
+    return saveDocument(doc);
 }
 
 std::string SaveManager::loadLocalLevel(int levelId)
 {
-    auto utils           = ax::FileUtils::getInstance();
-    std::string filePath = utils->getWritablePath() + SaveManager::SAVE_FILE_NAME;
-
-    if (!utils->isFileExist(filePath))
-    {
-        initSaveFile();
-        return "";
-    }
-
-    std::string content = utils->getStringFromFile(filePath);
 
     rapidjson::Document doc;
-    doc.Parse(content.c_str());
+    if (!loadDocument(doc)) return "";
 
-    if (doc.HasParseError() || !doc.IsObject())
+    if (auto* level = findLocalLevel(doc, levelId); level && level->HasMember("data") && (*level)["data"].IsString())
     {
-        AXLOGE("Error save file parse!");
-        return "";
-    }
-
-    auto& allocator = doc.GetAllocator();
-
-    if (doc.HasMember("local") && doc["local"].IsArray())
-    {
-        auto& localLevels = doc["local"];
-
-        for (auto& item : localLevels.GetArray())
-        {
-            if (item.HasMember("id") && item["id"].GetInt() == levelId)
-            {
-                return std::string(item["data"].GetString());
-            }
-        }
+        return (*level)["data"].GetString();
     }
     return "";
 }
 
 void SaveManager::setLocalLevelSongId(int levelId, int songId)
 {
-    auto utils           = ax::FileUtils::getInstance();
-    std::string filePath = utils->getWritablePath() + SaveManager::SAVE_FILE_NAME;
-
-    if (!utils->isFileExist(filePath))
-    {
-        initSaveFile();
-        return;
-    }
-
-    std::string content = utils->getStringFromFile(filePath);
-
     rapidjson::Document doc;
-    doc.Parse(content.c_str());
-
-    if (doc.HasParseError() || !doc.IsObject())
-    {
-        AXLOGE("Error save file parse!");
-        return;
-    }
+    if (!loadDocument(doc)) return;
 
     auto& allocator = doc.GetAllocator();
-    bool changed    = false;
 
-    if (doc.HasMember("local") && doc["local"].IsArray())
+    if (auto* level = findLocalLevel(doc, levelId))
     {
-        auto& localLevels = doc["local"];
-
-        for (auto& item : localLevels.GetArray())
+        if (level->HasMember("song"))
         {
-            if (item.HasMember("id") && item["id"].IsInt() && item["id"].GetInt() == levelId)
-            {
-                if (item.HasMember("song"))
-                {
-                    item["song"].SetInt(songId);
-                }
-                else
-                {
-                    item.AddMember("song", songId, allocator);
-                }
-                changed = true;
-                break;
-            }
+            (*level)["song"].SetInt(songId);
         }
-    }
+        else
+        {
+            level->AddMember("song", songId, doc.GetAllocator());
+        }
 
-    if (changed)
-    {
-        rapidjson::StringBuffer sb;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-        doc.Accept(writer);
-
-        utils->writeStringToFile(sb.GetString(), filePath);
+        saveDocument(doc);
     }
 }
 
 int SaveManager::getLocalLevelSongId(int levelId)
 {
-    auto utils           = ax::FileUtils::getInstance();
-    std::string filePath = utils->getWritablePath() + SaveManager::SAVE_FILE_NAME;
-
-    if (!utils->isFileExist(filePath))
-    {
-        initSaveFile();
-        return 1;
-    }
-
-    std::string content = utils->getStringFromFile(filePath);
-
     rapidjson::Document doc;
-    doc.Parse(content.c_str());
+    if (!loadDocument(doc)) return 1;
 
-    if (doc.HasParseError() || !doc.IsObject())
+    if (auto* level = findLocalLevel(doc, levelId); level && level->HasMember("song") && (*level)["song"].IsInt())
     {
-        AXLOGE("Error save file parse!");
-        return 1;
+        return (*level)["song"].GetInt();
     }
-
-    if (doc.HasMember("local") && doc["local"].IsArray())
-    {
-        auto& localLevels = doc["local"];
-
-        for (auto& item : localLevels.GetArray())
-        {
-            if (item.HasMember("id") && item["id"].IsInt() && item["id"].GetInt() == levelId)
-            {
-                if (item.HasMember("song"))
-                {
-                    return item["song"].GetInt();
-                }
-            }
-        }
-    }
-
     return 1;
 }
 
 void SaveManager::setLocalLevelBGColor(int levelId, const ax::Color3B& color)
 {
-    auto utils           = ax::FileUtils::getInstance();
-    std::string filePath = utils->getWritablePath() + SaveManager::SAVE_FILE_NAME;
-
-    if (!utils->isFileExist(filePath))
-    {
-        initSaveFile();
-        return;
-    }
-
-    std::string content = utils->getStringFromFile(filePath);
-
     rapidjson::Document doc;
-    doc.Parse(content.c_str());
+    if (!loadDocument(doc)) return;
 
-    if (doc.HasParseError() || !doc.IsObject())
+    if (auto* level = findLocalLevel(doc, levelId); level && level->HasMember("color") && (*level)["color"].IsArray())
     {
-        AXLOGE("Error save file parse!");
-        return;
-    }
+        auto& allocator = doc.GetAllocator();
+        auto& colors    = (*level)["color"];
+        colors.Clear();
+        colors.PushBack(color.r, allocator);
+        colors.PushBack(color.g, allocator);
+        colors.PushBack(color.b, allocator);
 
-    auto& allocator = doc.GetAllocator();
-    bool changed    = false;
-
-    if (doc.HasMember("local") && doc["local"].IsArray())
-    {
-        auto& localLevels = doc["local"];
-
-        for (auto& item : localLevels.GetArray())
-        {
-            if (item.HasMember("id") && item["id"].IsInt() && item["id"].GetInt() == levelId)
-            {
-                if (item.HasMember("color") && item["color"].IsArray())
-                {
-                    auto& colors = item["color"];
-                    colors.Clear();
-
-                    colors.PushBack(color.r, allocator);
-                    colors.PushBack(color.g, allocator);
-                    colors.PushBack(color.b, allocator);
-
-                    changed = true;
-                }
-                break;
-            }
-        }
-    }
-
-    if (changed)
-    {
-        rapidjson::StringBuffer sb;
-        rapidjson::Writer<rapidjson::StringBuffer> writer(sb);
-        doc.Accept(writer);
-
-        utils->writeStringToFile(sb.GetString(), filePath);
+        saveDocument(doc);
     }
 }
 
 ax::Color3B SaveManager::getLocalLevelBGColor(int levelId)
 {
-    auto utils           = ax::FileUtils::getInstance();
-    std::string filePath = utils->getWritablePath() + SaveManager::SAVE_FILE_NAME;
-
-    if (!utils->isFileExist(filePath))
-    {
-        initSaveFile();
-        return ax::Color3B::BLUE;
-    }
-
-    std::string content = utils->getStringFromFile(filePath);
-
     rapidjson::Document doc;
-    doc.Parse(content.c_str());
+    if (!loadDocument(doc)) return ax::Color3B::BLUE;
 
-    if (doc.HasParseError() || !doc.IsObject())
+    if (auto* level = findLocalLevel(doc, levelId); level && level->HasMember("color") && (*level)["color"].IsArray())
     {
-        AXLOGE("Error save file parse!");
-        return ax::Color3B::BLUE;
-    }
-
-    if (doc.HasMember("local") && doc["local"].IsArray())
-    {
-        auto& localLevels = doc["local"];
-
-        for (auto& item : localLevels.GetArray())
+        auto& colors = (*level)["color"];
+        if (colors.Size() >= 3)
         {
-            if (item.HasMember("id") && item["id"].IsInt() && item["id"].GetInt() == levelId)
-            {
-                if (item.HasMember("color") && item["color"].IsArray())
-                {
-                    auto& colors = item["color"];
-
-                    if (colors.Size() >= 3)
-                    {
-                        return ax::Color3B(colors[0].GetInt(), colors[1].GetInt(), colors[2].GetInt());
-                    }
-                }
-                break;
-            }
+            return ax::Color3B(colors[0].GetInt(), colors[1].GetInt(), colors[2].GetInt());
         }
     }
-
     return ax::Color3B::BLUE;
+}
+
+std::vector<LevelMeta> SaveManager::getLocalLevels()
+{
+    std::vector<LevelMeta> vec;
+    return vec;
 }
