@@ -35,6 +35,9 @@ bool PlayScene::initWithLevelid(int levelId)
 
     auto visibleSize = _director->getVisibleSize();
     auto origin      = _director->getVisibleOrigin();
+    auto safeArea    = _director->getSafeAreaRect();
+    float right      = safeArea.origin.x + safeArea.size.width;
+    float top        = safeArea.origin.y + safeArea.size.height;
 
     this->levelId = levelId;
 
@@ -90,8 +93,8 @@ bool PlayScene::initWithLevelid(int levelId)
     this->addChild(this->uiLayer, 200);
 
     auto exitBtn = ax::ui::Button::create("pause_btn.png", "", "", ax::ui::Widget::TextureResType::PLIST);
-    exitBtn->setPosition(ax::Vec2(visibleSize.width - (exitBtn->getContentSize().width + 10),
-                                  visibleSize.height - (exitBtn->getContentSize().height + 10)));
+    exitBtn->setPosition(
+        ax::Vec2(right - (exitBtn->getContentSize().width + 10), top - (exitBtn->getContentSize().height + 10)));
     exitBtn->setPressedActionEnabled(true);
     exitBtn->setScale(2.5F);
     exitBtn->addTouchEventListener(AX_CALLBACK_2(PlayScene::onExitButtonClicked, this));

@@ -15,6 +15,8 @@
 #include "FontHelper.h"
 #include "SongData.h"
 
+#include "AlertPopup.h"
+
 // scenes
 #include "play/PlayScene.h"
 #include "editor/EditorScene.h"
@@ -148,4 +150,21 @@ void LevelSelectScene::playLevel(int levelId)
     auto transition = ax::TransitionFade::create(0.5F, newScene, ax::Color3B::BLACK);
     _director->pushScene(transition);
 }
-void LevelSelectScene::deleteLevel(int levelId) {}
+void LevelSelectScene::deleteLevel(int levelId)
+{
+    auto alert = AlertPopup::create("WRANING!", "Do you want to delete this level?", [this, levelId]() {
+        bool deleted = SaveManager::deleteLocalLevel(levelId);
+        if (deleted)
+        {
+            this->view->removeAllItems();
+            this->levels.clear();
+            this->levels = SaveManager::getLocalLevels();
+            for (const auto& lvl : this->levels)
+            {
+                view->pushBackCustomItem(createLevelCard(lvl, view->getContentSize().width - 20));
+            }
+        }
+    });
+    alert->setPosition(ax::Vec2::ZERO);
+    this->addChild(alert, 100);
+}

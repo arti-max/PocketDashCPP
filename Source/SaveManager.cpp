@@ -282,3 +282,24 @@ std::vector<LevelMeta> SaveManager::getLocalLevels()
 
     return result;
 }
+
+bool SaveManager::deleteLocalLevel(int levelId)
+{
+    rapidjson::Document doc;
+    if (!loadDocument(doc)) return false;
+    if (!doc.HasMember("local") || !doc["local"].IsArray()) return false;
+
+    auto& localLevels = doc["local"];
+
+    for (auto it = localLevels.Begin(); it != localLevels.End(); ++it)
+    {
+        if (it->IsObject() && it->HasMember("id") && (*it)["id"].IsInt() && (*it)["id"].GetInt() == levelId)
+        {
+            localLevels.Erase(it);
+            return saveDocument(doc);
+        }
+    }
+
+    AXLOGW("delete level: level with id {} not found", levelId);
+    return false;
+}

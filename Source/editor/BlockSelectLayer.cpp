@@ -11,26 +11,26 @@ bool BlockSelectLayer::init()
     ax::Vec2 visibleSize = _director->getVisibleSize();
     ax::Vec2 origin      = _director->getVisibleOrigin();
 
-    float panelWidth  = visibleSize.width - 180.0F;
+    auto safeArea = _director->getSafeAreaRect();
+
+    float panelWidth  = 780.0F;
     float panelHeight = 120.0F;
+    float panelLeft   = safeArea.origin.x + ((safeArea.size.width - panelWidth) * 0.5F);
+    float panelBottom = safeArea.origin.y;
 
     auto rect = ax::LayerColor::create(ax::Color4B(0, 0, 0, 120), panelWidth, panelHeight);
-    rect->setPosition(origin.x + ((visibleSize.width - panelWidth) * 0.5F), origin.y + 10.0F);
+    rect->setPosition(panelLeft, panelBottom + 10);
     this->addChild(rect, -10);
 
-    this->initObjectButtons();
-    this->initModeButtons();
+    this->initObjectButtons(panelLeft, panelBottom);
+    this->initModeButtons(panelLeft, panelBottom);
 
     return true;
 }
 
-void BlockSelectLayer::initObjectButtons()
+void BlockSelectLayer::initObjectButtons(float panelLeft, float panelBottom)
 {
-
-    auto visibleSize = _director->getVisibleSize();
-    auto origin      = _director->getVisibleOrigin();
-
-    float baseXOffset = (origin.x + ((visibleSize.width - (visibleSize.width - 180.0F)) * 0.5F)) + 110.0F;
+    float baseXOffset = panelLeft + 310.0F;
     float xOffset     = baseXOffset;
     for (int i = 0; i < BLOCK_COUNT; ++i)
     {
@@ -54,7 +54,7 @@ void BlockSelectLayer::initObjectButtons()
             xOffset = baseXOffset;
         }
         auto btn = ax::ui::Button::create("dark_red_small_btn.png", "", "", ax::ui::Widget::TextureResType::PLIST);
-        btn->setPosition(ax::Vec2(baseXOffset + xOffset, origin.y + ((i < 6) ? 100.0F : 40.0F)));
+        btn->setPosition(ax::Vec2(xOffset, panelBottom + ((i < 6) ? 100.0F : 40.0F)));
         xOffset += 85.0F;
 
         btn->setPressedActionEnabled(true);
@@ -80,12 +80,10 @@ void BlockSelectLayer::initObjectButtons()
     }
 }
 
-void BlockSelectLayer::initModeButtons()
+void BlockSelectLayer::initModeButtons(float panelLeft, float panelBottom)
 {
-    auto visibleSize = _director->getVisibleSize();
-    auto origin      = _director->getVisibleOrigin();
 
-    float baseXOffset = (origin.x + ((visibleSize.width - (visibleSize.width - 180.0F)) * 0.5F)) - 10.0F;
+    float baseXOffset = panelLeft + 70.0F;
     float xOffset     = baseXOffset;
 
     for (int i = 0; i < MODE_COUNT; ++i)
@@ -104,7 +102,7 @@ void BlockSelectLayer::initModeButtons()
             xOffset = baseXOffset;
         }
         auto btn = ax::ui::Button::create("medium_btn.png", "", "", ax::ui::Widget::TextureResType::PLIST);
-        btn->setPosition(ax::Vec2(baseXOffset + xOffset, origin.y + ((i < 2) ? 100.0F : 40.0F)));
+        btn->setPosition(ax::Vec2(xOffset, panelBottom + ((i < 2) ? 100.0F : 40.0F)));
         btn->setPressedActionEnabled(true);
         btn->setScale(2.5F);
         btn->addTouchEventListener(AX_CALLBACK_2(BlockSelectLayer::onModeButtonClicked, this));

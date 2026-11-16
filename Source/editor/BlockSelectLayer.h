@@ -17,8 +17,8 @@ public:
     CREATE_FUNC(BlockSelectLayer);
     bool init() override;
 
-    void initObjectButtons();
-    void initModeButtons();
+    void initObjectButtons(float panelLeft, float panelBottom);
+    void initModeButtons(float panelLeft, float panelBottom);
 
     void onBlockButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type);
     void onModeButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type);

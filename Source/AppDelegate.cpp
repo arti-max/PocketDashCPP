@@ -74,15 +74,26 @@ bool AppDelegate::applicationDidFinishLaunching()
         director->setRenderView(renderView);
     }
 
+    auto frameSize = renderView->getFrameSize();
+    float aspect   = frameSize.width / frameSize.height;
+
     // turn on display FPS
-    director->setStatsDisplay(true);
+    director->setStatsDisplay(false);
 
     // set FPS. the default value is 1.0/60 if you don't call this
     director->setAnimationInterval(1.0F / 60);
 
     // Set the design resolution
-    renderView->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height,
-                                        ResolutionPolicy::FIXED_HEIGHT);
+    if (aspect < (16.0F / 9.0F))
+    {
+        renderView->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height,
+                                            ResolutionPolicy::FIXED_WIDTH);
+    }
+    else
+    {
+        renderView->setDesignResolutionSize(designResolutionSize.width, designResolutionSize.height,
+                                            ResolutionPolicy::FIXED_HEIGHT);
+    }
 
 #if !_AX_TESTS
 

@@ -28,6 +28,9 @@ bool EditorScene::init(int levelId)
 
     auto visibleSize = _director->getVisibleSize();
     auto origin      = _director->getVisibleOrigin();
+    auto safeArea    = _director->getSafeAreaRect();
+    float right = safeArea.origin.x = safeArea.size.width;
+    float top                       = safeArea.origin.y + safeArea.size.height;
 
     // contentNode - нода, содержащая в себе блоки и сетку (перемещаемая часть редактора)
     this->contentNode = ax::Node::create();
@@ -49,17 +52,17 @@ bool EditorScene::init(int levelId)
     this->addChild(this->selectLayer, 10);
 
     auto exitBtn = ax::ui::Button::create("pause_btn.png", "", "", ax::ui::Widget::TextureResType::PLIST);
-    exitBtn->setPosition(ax::Vec2(visibleSize.width - (exitBtn->getContentSize().width + 10),
-                                  visibleSize.height - (exitBtn->getContentSize().height + 10)));
+    exitBtn->setPosition(
+        ax::Vec2(right - (exitBtn->getContentSize().width + 10), top - (exitBtn->getContentSize().height + 10)));
     exitBtn->setPressedActionEnabled(true);
     exitBtn->setScale(2.5F);
     exitBtn->addTouchEventListener(AX_CALLBACK_2(EditorScene::onExitButtonClicked, this));
     this->addChild(exitBtn, 10);
 
     auto settingsBtn = ax::ui::Button::create("more_btn.png", "", "", ax::ui::Widget::TextureResType::PLIST);
-    settingsBtn->setPosition(ax::Vec2(
-        visibleSize.width - (settingsBtn->getContentSize().width + 10) - (exitBtn->getContentSize().width + 10) - 20,
-        visibleSize.height - (settingsBtn->getContentSize().height + 10)));
+    settingsBtn->setPosition(
+        ax::Vec2(right - (settingsBtn->getContentSize().width + 10) - (exitBtn->getContentSize().width + 10) - 20,
+                 top - (settingsBtn->getContentSize().height + 10)));
     settingsBtn->setPressedActionEnabled(true);
     settingsBtn->setScale(2.5F);
     settingsBtn->addTouchEventListener(AX_CALLBACK_2(EditorScene::onSettingsButtonClicked, this));

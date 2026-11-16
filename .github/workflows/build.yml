@@ -3,13 +3,26 @@ name: Multiplatform Build (Windows, macOS, iOS, Android, Linux)
 on:
   push:
     branches: [ main, master ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
+    inputs:
+      build_mode:
+        description: 'Build configuration (debug or release)'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
+
+env:
+  IS_RELEASE: ${{ startsWith(github.ref, 'refs/tags/') || github.event.inputs.build_mode == 'release' }}
 
 jobs:
   # ====================================================================
@@ -35,7 +48,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: sccache
-          key: windows-sccache-v1
+          key: windows-sccache-${{ env.IS_RELEASE }}
           max-size: 2G
 
       - name: Cache Axmol Engine
@@ -60,7 +73,8 @@ jobs:
           $env:PATH = "C:/axmol/tools/cmdline;$env:PATH"
           $env:CMAKE_C_COMPILER_LAUNCHER = "sccache"
           $env:CMAKE_CXX_COMPILER_LAUNCHER = "sccache"
-          axmol build -p win32 -a x64 -t PocketDash -O3
+          $opt = if ("${{ env.IS_RELEASE }}" -eq "true") { "-O3" } else { "-O0" }
+          axmol build -p win32 -a x64 -t PocketDash $opt
 
       - name: Package Windows Binary & Assets
         shell: pwsh
@@ -71,7 +85,6 @@ jobs:
             exit 1
           }
           $binDir = $exe.DirectoryName
-          Write-Host "Found PocketDash binary directory at: $binDir"
           Compress-Archive -Path "$binDir/*" -DestinationPath "PocketDash-Windows-x64.zip"
 
       - name: Upload Windows Artifact
@@ -97,7 +110,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: ccache
-          key: macos-ccache-v1
+          key: macos-ccache-${{ env.IS_RELEASE }}
           max-size: 2G
 
       - name: Cache Axmol Engine
@@ -122,21 +135,17 @@ jobs:
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
           export CMAKE_C_COMPILER_LAUNCHER=ccache
           export CMAKE_CXX_COMPILER_LAUNCHER=ccache
-          axmol build -p osx -a arm64 -t PocketDash -O3 -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
+          OPT_FLAG=$([ "$IS_RELEASE" = "true" ] && echo "-O3" || echo "-O0")
+          axmol build -p osx -a arm64 -t PocketDash $OPT_FLAG -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
 
       - name: Package macOS Application (.app)
         shell: bash
         run: |
-          APP_DIR=$(find . -path "*osx*" -o -path "*build*" | grep -E "PocketDash\.app$" | grep -v "ios" | grep -v "sim" | head -n 1)
-          if [ -z "$APP_DIR" ]; then
-            APP_DIR=$(find . -name "PocketDash.app" -type d | grep -v "ios" | grep -v "sim" | head -n 1)
-          fi
+          APP_DIR=$(find . -name "PocketDash.app" -type d | grep -v "ios" | grep -v "sim" | head -n 1)
           if [ -z "$APP_DIR" ]; then
             echo "Error: PocketDash.app not found!"
-            find . -name "*.app" || true
             exit 1
           fi
-          echo "Packaging macOS app from: $APP_DIR"
           ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "PocketDash-macOS.zip"
 
       - name: Upload macOS Artifact
@@ -162,7 +171,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: ccache
-          key: ios-ccache-v1
+          key: ios-ccache-${{ env.IS_RELEASE }}
           max-size: 2G
 
       - name: Cache Axmol Engine
@@ -180,7 +189,6 @@ jobs:
           cd ~/axmol
           pwsh ./setup.ps1
 
-      # 1. iOS Physical Device Build (arm64)
       - name: Build iOS Device (arm64)
         shell: bash
         run: |
@@ -188,23 +196,20 @@ jobs:
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
           export CMAKE_C_COMPILER_LAUNCHER=ccache
           export CMAKE_CXX_COMPILER_LAUNCHER=ccache
-          axmol build -p ios -a arm64 -t PocketDash -O3 -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
+          OPT_FLAG=$([ "$IS_RELEASE" = "true" ] && echo "-O3" || echo "-O0")
+          axmol build -p ios -a arm64 -t PocketDash $OPT_FLAG -xc '-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO,-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO'
 
       - name: Package iOS Device IPA
         shell: bash
         run: |
           APP_DIR=$(find . -path "*ios*" -name "PocketDash.app" -type d | grep -v "sim" | head -n 1)
           if [ -n "$APP_DIR" ]; then
-            echo "Packaging iOS Device IPA from: $APP_DIR"
             mkdir -p Payload
             cp -R "$APP_DIR" Payload/
             zip -qr "PocketDash-iOS.ipa" Payload
             rm -rf Payload
-          else
-            echo "Warning: iOS device app bundle not found!"
           fi
 
-      # 2. iOS Simulator Build (for testing in Mac Simulator)
       - name: Build iOS Simulator (arm64)
         shell: bash
         run: |
@@ -212,17 +217,15 @@ jobs:
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
           export CMAKE_C_COMPILER_LAUNCHER=ccache
           export CMAKE_CXX_COMPILER_LAUNCHER=ccache
-          axmol build -p ios -a arm64 -sdk simulator -t PocketDash -O3
+          OPT_FLAG=$([ "$IS_RELEASE" = "true" ] && echo "-O3" || echo "-O0")
+          axmol build -p ios -a arm64 -sdk simulator -t PocketDash $OPT_FLAG
 
       - name: Package iOS Simulator App
         shell: bash
         run: |
           SIM_DIR=$(find . -path "*sim*" -name "PocketDash.app" -type d | head -n 1)
           if [ -n "$SIM_DIR" ]; then
-            echo "Packaging iOS Simulator app from: $SIM_DIR"
             ditto -c -k --sequesterRsrc --keepParent "$SIM_DIR" "PocketDash-iOS-Simulator.zip"
-          else
-            echo "Warning: iOS Simulator app bundle not found!"
           fi
 
       - name: Upload iOS Device IPA
@@ -242,7 +245,7 @@ jobs:
           retention-days: 14
 
   # ====================================================================
-  # Android Build (arm64 APK)
+  # Android Build (arm64 APK: Debug or Signed Release)
   # ====================================================================
   android:
     name: Android (arm64 APK)
@@ -282,7 +285,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: ccache
-          key: android-ccache-v1
+          key: android-ccache-${{ env.IS_RELEASE }}
           max-size: 2G
 
       - name: Build Android APK
@@ -294,19 +297,40 @@ jobs:
           export CMAKE_C_COMPILER_LAUNCHER=ccache
           export CMAKE_CXX_COMPILER_LAUNCHER=ccache
           chmod +x proj.android/gradlew
-          axmol build -p android -a arm64
+          OPT_FLAG=$([ "$IS_RELEASE" = "true" ] && echo "-O3" || echo "-O0")
+          axmol build -p android -a arm64 $OPT_FLAG
 
-      - name: Package Android APK
+      - name: Sign & Package Android APK
         shell: bash
         run: |
-          APK_FILE=$(find proj.android -name "*.apk" -type f | head -n 1)
-          if [ -z "$APK_FILE" ]; then
-            echo "Error: APK not found!"
-            find proj.android -name "*.apk" || true
-            exit 1
+          if [ "$IS_RELEASE" = "true" ]; then
+            RAW_APK=$(find proj.android -path "*release*" -name "*.apk" -type f | head -n 1)
+            if [ -z "$RAW_APK" ]; then
+              echo "Error: Release APK not found!"
+              find proj.android -name "*.apk" || true
+              exit 1
+            fi
+
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+            BUILD_TOOLS=$(ls -d /usr/local/lib/android/sdk/build-tools/* | sort -V | tail -n 1)
+
+            "$BUILD_TOOLS/zipalign" -f -p 4 "$RAW_APK" aligned.apk
+            "$BUILD_TOOLS/apksigner" sign \
+              --ks release.keystore \
+              --ks-key-alias "${{ secrets.ANDROID_KEY_ALIAS }}" \
+              --ks-pass "pass:${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+              --key-pass "pass:${{ secrets.ANDROID_KEY_PASSWORD }}" \
+              --out "PocketDash-Android-arm64.apk" \
+              aligned.apk
+            rm -f release.keystore aligned.apk
+          else
+            APK_FILE=$(find proj.android -name "*.apk" -type f | head -n 1)
+            if [ -z "$APK_FILE" ]; then
+              echo "Error: Debug APK not found!"
+              exit 1
+            fi
+            cp "$APK_FILE" "PocketDash-Android-arm64.apk"
           fi
-          echo "Found APK at: $APK_FILE"
-          cp "$APK_FILE" "PocketDash-Android-arm64.apk"
 
       - name: Upload Android Artifact
         uses: actions/upload-artifact@v4
@@ -331,7 +355,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: ccache
-          key: linux-ccache-v1
+          key: linux-ccache-${{ env.IS_RELEASE }}
           max-size: 2G
 
       - name: Cache Axmol Engine
@@ -359,8 +383,12 @@ jobs:
           export PATH="${HOME}/axmol/tools/cmdline:${PATH}"
           export CMAKE_C_COMPILER_LAUNCHER=ccache
           export CMAKE_CXX_COMPILER_LAUNCHER=ccache
-          cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=Release
+          BUILD_TYPE=$([ "$IS_RELEASE" = "true" ] && echo "Release" || echo "Debug")
+          cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE
           cmake --build build --target PocketDash -j$(nproc)
+          if [ "$IS_RELEASE" = "true" ]; then
+            strip build/bin/PocketDash/PocketDash
+          fi
 
       - name: Package Linux Binary & Assets
         shell: bash
@@ -373,3 +401,29 @@ jobs:
           name: PocketDash-Linux-x64
           path: PocketDash-Linux-x64.tar.gz
           retention-days: 14
+
+  # ====================================================================
+  # Publish EAB / Release to GitHub Releases
+  # ====================================================================
+  publish_release:
+    name: Publish GitHub Release
+    needs: [windows, macos, ios, android, linux]
+    if: env.IS_RELEASE == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create Pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('eab-{0}', github.run_number) }}
+          name: PocketDash ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('EAB #{0}', github.run_number) }}
+          prerelease: true
+          generate_release_notes: true
+          files: artifacts/*
