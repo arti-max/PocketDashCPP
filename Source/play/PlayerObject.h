@@ -49,6 +49,8 @@ public:
     void death();
     void showSkin();
 
+    ax::Color3B getMainColor() const { return this->color1; }
+
     ax::Rect getAABB() const override;
 
 private:

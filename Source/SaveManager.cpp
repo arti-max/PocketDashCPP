@@ -138,7 +138,7 @@ int SaveManager::initLocalLevel(std::string_view levelName)
     // 0,0,255 (rbg) - Blue
     rapidjson::Value color(rapidjson::kArrayType);
     color.PushBack(0, allocator);
-    color.PushBack(0, allocator);
+    color.PushBack(103, allocator);
     color.PushBack(255, allocator);
     newLevel.AddMember("color", color, allocator);
 
@@ -239,7 +239,7 @@ void SaveManager::setLocalLevelBGColor(int levelId, const ax::Color3B& color)
 ax::Color3B SaveManager::getLocalLevelBGColor(int levelId)
 {
     rapidjson::Document doc;
-    if (!loadDocument(doc)) return ax::Color3B::BLUE;
+    if (!loadDocument(doc)) return ax::Color3B(1, 103, 255);
 
     if (auto* level = findLocalLevel(doc, levelId); level && level->HasMember("color") && (*level)["color"].IsArray())
     {
@@ -249,7 +249,7 @@ ax::Color3B SaveManager::getLocalLevelBGColor(int levelId)
             return ax::Color3B(colors[0].GetInt(), colors[1].GetInt(), colors[2].GetInt());
         }
     }
-    return ax::Color3B::BLUE;
+    return ax::Color3B(1, 103, 255);
 }
 
 std::vector<LevelMeta> SaveManager::getLocalLevels()

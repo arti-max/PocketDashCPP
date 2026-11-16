@@ -1,6 +1,5 @@
 #pragma once
 #include "GameObject.h"
-#include "axmol.h"
 
 // Что должен делать чанк?
 /*

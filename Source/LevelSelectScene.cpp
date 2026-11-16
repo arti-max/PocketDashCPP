@@ -57,7 +57,8 @@ bool LevelSelectScene::init()
 
     auto createBtn = ax::ui::Button::create("plus_btn.png", "", "", ax::ui::Widget::TextureResType::PLIST);
     createBtn->setScale(4.5F);
-    createBtn->setPosition(ax::Vec2(visibleSize.width - createBtn->getContentSize().width - 26, 46.0F));
+    createBtn->setPosition(
+        ax::Vec2(visibleSize.width - createBtn->getContentSize().width - 56, createBtn->getContentSize().height + 56));
     createBtn->addClickEventListener([this](ax::Object* obj) -> void {
         this->levels.clear();
         this->view->removeAllItems();

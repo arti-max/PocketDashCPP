@@ -131,6 +131,11 @@ void PlayScene::resetlevel()
     this->background->stopActionByTag(BG_CHANGE_COLOR_ACTION);
     this->background->setColor(this->baseColor);
     this->musicSourceId = ax::AudioEngine::play2d(getSongFileNameByID(this->songId), false, 0.8F);
+    for (GameObject* obj : this->blendObjects)
+    {
+        obj->stopActionByTag(BG_CHANGE_COLOR_ACTION);
+        obj->setColor(getChainColor(this->baseColor));
+    }
 }
 
 void PlayScene::updateCamera(float dt)
@@ -475,22 +480,72 @@ void PlayScene::addTrigger(GameObject* obj)
     this->triggers.push_back(obj);
 }
 
+void PlayScene::addBlendObject(GameObject* obj)
+{
+    if (!obj) return;
+    obj->setColor(getChainColor(this->background->getColor()));
+    this->blendObjects.push_back(obj);
+}
+
 void PlayScene::executeTrigger(GameObject* obj)
 {
     float fadeTime = obj->getFadeTime();
     auto color     = obj->getTriggerColor();
 
+    this->background->stopActionByTag(BG_CHANGE_COLOR_ACTION);
+
     if (fadeTime <= 0.0F)
     {
-        this->background->stopActionByTag(BG_CHANGE_COLOR_ACTION);
         this->background->setColor(color);
+        for (auto* obj : this->blendObjects)
+        {
+            obj->stopActionByTag(BG_CHANGE_COLOR_ACTION);
+            obj->setColor(getChainColor(color));
+        }
         return;
     }
 
-    this->background->stopActionByTag(BG_CHANGE_COLOR_ACTION);
-
     auto tintAction = ax::TintTo::create(fadeTime, color);
     tintAction->setTag(BG_CHANGE_COLOR_ACTION);
-
     this->background->runAction(tintAction);
+
+    auto objTintAction = ax::TintTo::create(fadeTime, getChainColor(color));
+
+    for (GameObject* obj : this->blendObjects)
+    {
+        obj->stopActionByTag(BG_CHANGE_COLOR_ACTION);
+        auto clone = objTintAction->clone();
+        clone->setTag(BG_CHANGE_COLOR_ACTION);
+        obj->runAction(clone);
+    }
+}
+
+ax::Color3B PlayScene::computeLBG(const ax::Color3B& col)
+{
+    ax::HSV hsv;
+    hsv.fromRgba(ax::Color4F(col));
+    float origV = hsv.v;
+
+    if (origV < 0.10F)
+    {
+        hsv.s = 0.0F;
+    }
+    else
+    {
+        hsv.s = std::max(0.0F, hsv.s - 0.20F);
+    }
+
+    hsv.v = std::clamp(hsv.v + 0.25F, 0.30F, 0.80F);
+
+    return hsv.toColor3B();
+}
+
+ax::Color3B PlayScene::getChainColor(const ax::Color3B& bgColor)
+{
+    if (bgColor != ax::Color3B::BLACK)
+    {
+        return bgColor;
+    }
+
+    return this->player ? this->player->getMainColor() : ax::Color3B::WHITE;
 }

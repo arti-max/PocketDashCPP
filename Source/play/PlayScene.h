@@ -39,9 +39,13 @@ public:
     void resetlevel();
 
     void addTrigger(GameObject* obj);
+    void addBlendObject(GameObject* obj);
     void executeTrigger(GameObject* obj);
 
     void onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventType type);
+
+    ax::Color3B computeLBG(const ax::Color3B& col);
+    ax::Color3B getChainColor(const ax::Color3B& bgColor);
 
     ObjectChunk* getChunkByCell(int cellX, int cellY);
     ObjectChunk* getCurrentChunk();
@@ -50,6 +54,7 @@ private:
     const int DEATH_TICKS = 60;
     ax::Vector<ObjectChunk*> chunks;
     std::vector<GameObject*> triggers;
+    std::vector<GameObject*> blendObjects;
     Ticker _ticker{60};
 
     size_t nextTriggerId = 0;
