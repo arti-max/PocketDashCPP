@@ -13,9 +13,9 @@ public:
 
     EditorScene()           = default;
     ~EditorScene() override = default;
-    CREATE_FUNC(EditorScene);
+    static EditorScene* create(int levelId);
 
-    bool init() override;
+    bool init(int levelId);
     void update(float dt) override;
 
     int snapClickToBlock(float x, float y);  // returns cell id
@@ -40,6 +40,8 @@ public:
 
 private:
     ax::Vector<ObjectChunk*> chunks;
+
+    int levelId = 0;
 
     ax::Node* contentNode         = nullptr;
     GridLayer* gridLayer          = nullptr;

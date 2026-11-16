@@ -455,10 +455,17 @@ void PlayScene::onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEventT
 {
     if (type == ax::ui::Widget::TouchEventType::ENDED)
     {
-        ax::AudioEngine::stopAll();
-        auto newScene   = EditorScene::create();
-        auto transition = ax::TransitionFade::create(0.5F, newScene);
-        _director->replaceScene(transition);
+        auto visibleSize = _director->getVisibleSize();
+
+        auto fadeLayer = ax::LayerColor::create(ax::Color4B(0, 0, 0, 0), visibleSize.width, visibleSize.height);
+        _director->setNotificationNode(fadeLayer);
+
+        auto seq = ax::Sequence::create(
+            ax::FadeIn::create(0.2F), ax::CallFunc::create([]() { ax::Director::getInstance()->popScene(); }),
+            ax::FadeOut::create(0.2F),
+            ax::CallFunc::create([]() { ax::Director::getInstance()->setNotificationNode(nullptr); }), nullptr);
+
+        fadeLayer->runAction(seq);
     }
 }
 

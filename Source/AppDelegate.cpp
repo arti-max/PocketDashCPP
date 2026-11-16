@@ -26,6 +26,7 @@
 #include "AppDelegate.h"
 #include "MainScene.h"
 #include "editor/EditorScene.h"
+#include "LevelSelectScene.h"
 
 #define USE_AUDIO_ENGINE 1
 
@@ -94,7 +95,7 @@ bool AppDelegate::applicationDidFinishLaunching()
 
     // create a scene. it's an autorelease object
     // auto scene = utils::createInstance<MainScene>();
-    auto scene = EditorScene::create();
+    auto scene = LevelSelectScene::create();
 
     // run
     director->runWithScene(scene);

@@ -1,20 +1,23 @@
-/*
- * PocketDash - Rhythm-based 2D Platformer
- * Copyright (C) 2026 [arti-max]
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- */
-
 #include "EditorScene.h"
 #include "SaveManager.h"
 #include "play/PlayScene.h"
 #include "ChangeColorPopup.h"
 #include "LevelSettingsLayer.h"
+#include "LevelSelectScene.h"
 
-bool EditorScene::init()
+EditorScene* EditorScene::create(int levelId)
+{
+    auto* obj = new (std::nothrow) EditorScene();
+    if (obj && obj->init(levelId))
+    {
+        obj->autorelease();
+        return obj;
+    }
+    delete obj;
+    return nullptr;
+}
+
+bool EditorScene::init(int levelId)
 {
     if (!Scene::init())
     {
@@ -63,7 +66,8 @@ bool EditorScene::init()
     this->addChild(settingsBtn, 10);
 
     // загрузка сохранённого уровня
-    this->loadLevelFromSave(0);
+    this->levelId = levelId;
+    this->loadLevelFromSave(levelId);
     this->cullChunks();
 
     // настройка слушателей касания
@@ -271,6 +275,9 @@ void EditorScene::cullChunks()
 // BlockID,posX,posY,rot;
 void EditorScene::loadLevelFromSave(int levelId)
 {
+    this->selectedColor  = SaveManager::getLocalLevelBGColor(levelId);
+    this->selectedSongId = SaveManager::getLocalLevelSongId(levelId);
+
     std::string levelData = SaveManager::loadLocalLevel(levelId);
     if (levelData.empty()) return;
 
@@ -315,9 +322,6 @@ void EditorScene::loadLevelFromSave(int levelId)
             chunk->addObjectToChunk(obj);
         }
     }
-
-    this->selectedColor  = SaveManager::getLocalLevelBGColor(levelId);
-    this->selectedSongId = SaveManager::getLocalLevelSongId(levelId);
 }
 
 bool EditorScene::saveLevelToSave(int levelId)
@@ -350,9 +354,9 @@ void EditorScene::onExitButtonClicked(ax::Ref* sender, ax::ui::Widget::TouchEven
 {
     if (type == ax::ui::Widget::TouchEventType::ENDED)
     {
-        bool saved = this->saveLevelToSave(0);
+        bool saved = this->saveLevelToSave(this->levelId);
         if (!saved) AXLOGE("Failed to save level");
-        auto newScene   = PlayScene::create(0);
+        auto newScene   = LevelSelectScene::create();
         auto transition = ax::TransitionFade::create(0.5F, newScene, ax::Color3B::BLACK);
         _director->replaceScene(transition);
     }

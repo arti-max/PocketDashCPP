@@ -6,7 +6,7 @@ struct LevelMeta
 {
     int id;
     int onlineId = -1;
-    int songId;
+    int songId   = 1;
     ax::Color3B color;
     std::string name;
 };

@@ -105,37 +105,69 @@ void SaveManager::initSaveFile()
     utils->writeStringToFile(jsonString, filePath);
 }
 
+int SaveManager::initLocalLevel(std::string_view levelName)
+{
+    rapidjson::Document doc;
+    if (!loadDocument(doc)) return -1;
+
+    if (!doc.HasMember("local") || !doc["local"].IsArray()) return -1;
+
+    auto& allocator   = doc.GetAllocator();
+    auto& localLevels = doc["local"];
+
+    int maxId = 0;
+    for (const auto& item : localLevels.GetArray())
+    {
+        if (item.IsObject() && item.HasMember("id") && item["id"].IsInt())
+        {
+            maxId = std::max(maxId, item["id"].GetInt());
+        }
+    }
+
+    int newId = maxId + 1;
+
+    std::string name = levelName.empty() ? fmt::format("level {}", newId) : std::string(levelName);
+
+    rapidjson::Value newLevel(rapidjson::kObjectType);
+    newLevel.AddMember("id", newId, allocator);
+    newLevel.AddMember("oid", -1, allocator);
+    newLevel.AddMember("song", static_cast<int>(SONG::EGO), allocator);  // Ego
+    newLevel.AddMember("name", makeJsonString(name, allocator), allocator);
+    newLevel.AddMember("data", makeJsonString("", allocator), allocator);
+
+    // 0,0,255 (rbg) - Blue
+    rapidjson::Value color(rapidjson::kArrayType);
+    color.PushBack(0, allocator);
+    color.PushBack(0, allocator);
+    color.PushBack(255, allocator);
+    newLevel.AddMember("color", color, allocator);
+
+    localLevels.PushBack(newLevel, allocator);
+
+    if (!saveDocument(doc)) return -1;
+
+    return newId;
+}
+
 bool SaveManager::saveLocalLevel(std::string_view levelString, int levelId)
 {
+    if (levelId < 0)
+    {
+        levelId = initLocalLevel("");
+        if (levelId < 0) return false;
+    }
+
     rapidjson::Document doc;
     if (!loadDocument(doc)) return false;
 
-    auto& allocator = doc.GetAllocator();
-
-    if (auto* level = findLocalLevel(doc, levelId))
+    auto* level = findLocalLevel(doc, levelId);
+    if (level == nullptr)
     {
-        (*level)["data"] = makeJsonString(levelString, allocator);
-    }
-    else if (doc.HasMember("local") && doc["local"].IsArray())
-    {
-        rapidjson::Value newLevel(rapidjson::kObjectType);
-
-        newLevel.AddMember("id", levelId, allocator);
-        newLevel.AddMember("oid", -1, allocator);
-        newLevel.AddMember("song", (int)SONG::EGO, allocator);  // Ego
-        newLevel.AddMember("name", makeJsonString(fmt::format("level {}", levelId), allocator), allocator);
-        newLevel.AddMember("data", makeJsonString(levelString, allocator), allocator);
-
-        // 0,0,255 (rbg) - Blue
-        rapidjson::Value color(rapidjson::kArrayType);
-        color.PushBack(0, allocator);
-        color.PushBack(0, allocator);
-        color.PushBack(255, allocator);
-        newLevel.AddMember("color", color, allocator);
-
-        doc["local"].PushBack(newLevel, allocator);
+        AXLOGE("saveLocalLevel: level with id {} not fond!", levelId);
+        return false;
     }
 
+    (*level)["data"] = makeJsonString(levelString, doc.GetAllocator());
     return saveDocument(doc);
 }
 
@@ -222,6 +254,31 @@ ax::Color3B SaveManager::getLocalLevelBGColor(int levelId)
 
 std::vector<LevelMeta> SaveManager::getLocalLevels()
 {
-    std::vector<LevelMeta> vec;
-    return vec;
+    std::vector<LevelMeta> result;
+
+    rapidjson::Document doc;
+    if (!loadDocument(doc)) return result;
+
+    if (doc.HasMember("local") && doc["local"].IsArray())
+    {
+        const auto& localLevels = doc["local"].GetArray();
+        result.reserve(localLevels.Size());
+
+        for (const auto& item : localLevels)
+        {
+            if (!item.IsObject() || !item.HasMember("id")) continue;
+            if (!item["id"].IsInt()) continue;
+
+            LevelMeta meta;
+            meta.id       = item["id"].GetInt();
+            meta.onlineId = item.HasMember("oid") ? item["oid"].GetInt() : -1;
+            meta.name   = (item.HasMember("name") && item["name"].IsString()) ? item["name"].GetString() : "undefined";
+            meta.color  = ax::Color3B(item["color"][0].GetInt(), item["color"][1].GetInt(), item["color"][2].GetInt());
+            meta.songId = (item.HasMember("song")) ? item["song"].GetInt() : static_cast<int>(SONG::EGO);
+
+            result.push_back(std::move(meta));
+        }
+    }
+
+    return result;
 }
